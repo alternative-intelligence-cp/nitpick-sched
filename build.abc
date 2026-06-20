@@ -1,0 +1,38 @@
+// build.abc — nitpick-sched build manifest
+// Native Nitpick Scheduler for Nikola AGI Substrate
+
+project:nitpick_sched = {
+    version: "0.0.0";
+    description: "Native Nitpick Scheduler for Nikola AGI Substrate";
+    license: "Apache-2.0";
+
+    // Build flags configuration
+    flags: ["-O3", "--verify"];
+
+    // ── Source modules ─────────────────────────
+    sources: [
+        // To be populated in subsequent releases
+    ];
+
+    // ── Test targets ──────────────────────────────────────────────────
+    test:unit = {
+        flags: ["-O3", "--verify"];
+        sources: [
+            // To be populated in subsequent releases
+        ];
+    };
+
+    test:integration = {
+        flags: ["-O3", "--verify"];
+        sources: [
+            // To be populated in subsequent releases
+        ];
+    };
+
+    test:concurrency = {
+        flags: ["-O3", "--verify", "--verify-concurrency"];
+        sources: [
+            // To be populated in subsequent releases
+        ];
+    };
+};
