@@ -1,0 +1,61 @@
+// tests/unit/test_chase_lev.npk
+// Verifies Chase-Lev fast path (push/pop) single-threaded
+
+use "../../src/smp/chase_lev.npk".*;
+use "../../src/structs/memory_helpers.npk".*;
+
+pub func:proc_exit = int32(int32: code) {
+    int32: dummy = asm!!!<int32>("x86_64", "movl $1, %edi; movl $$60, %eax; syscall", "=r,r", code);
+    pass 0;
+};
+
+pub func:main = int32() {
+    int64: deque = raw chase_lev_init();
+    if (deque == 0) { exit 1; }
+    
+    // Pop empty
+    int32: e = raw chase_lev_pop(deque);
+    if (e != -1) { exit 2; }
+    
+    // Push one
+    bool: p1 = raw chase_lev_push(deque, 42);
+    if (!p1) { exit 3; }
+    
+    // Pop one
+    int32: r1 = raw chase_lev_pop(deque);
+    if (r1 != 42) { exit 4; }
+    
+    // Pop empty again
+    int32: e2 = raw chase_lev_pop(deque);
+    if (e2 != -1) { exit 5; }
+    
+    // Push multiple
+    int32: i = 0;
+    while (i < 128) {
+        bool: success = raw chase_lev_push(deque, i + 100);
+        if (!success) { exit 6; }
+        i = i + 1;
+    }
+    
+    // Push full
+    bool: full = raw chase_lev_push(deque, 999);
+    if (full) { exit 7; }
+    
+    // Pop one
+    int32: r2 = raw chase_lev_pop(deque);
+    if (r2 != 227) { exit 8; } // The last item pushed was 127 + 100 = 227
+    
+    // Pop rest
+    int32: j = 126;
+    while (j >= 0) {
+        int32: p = raw chase_lev_pop(deque);
+        if (p != j + 100) { exit 9; }
+        j = j - 1;
+    }
+    
+    exit 0;
+};
+
+func:failsafe = int32(tbb32:err) {
+    exit 99;
+};

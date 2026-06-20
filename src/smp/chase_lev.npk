@@ -1,0 +1,65 @@
+// src/smp/chase_lev.npk
+// Lock-free circular deque (fast path)
+
+use "../structs/memory_helpers.npk".*;
+
+pub struct:ChaseLev = {
+    int64: top;
+    int64: bottom;
+};
+
+// 128 elements max. Each element is an int32 TCB Handle.
+// size = 16 bytes for top/bottom + 128 * 4 bytes = 528 bytes.
+pub func:chase_lev_init = int64() {
+    int64: ptr = raw ptr_to_int(calloc(1, 528) => any->);
+    pass ptr;
+};
+
+// Returns false if full, true if pushed
+pub func:chase_lev_push = bool(int64: deque, int32: task_handle) {
+    if (deque == 0) { pass false; }
+    
+    int64: top = raw read_int64(deque + 0);
+    int64: bottom = raw read_int64(deque + 8);
+    
+    int64: size = bottom - top;
+    if (size >= 128) { pass false; }
+    
+    int64: idx = bottom % 128;
+    int64: item_ptr = deque + 16 + (idx * 4);
+    
+    // memory_order_relaxed write
+    drop write_int32(item_ptr, task_handle);
+    drop write_int64(deque + 8, bottom + 1);
+    
+    pass true;
+};
+
+// Returns -1 if empty, or task handle
+pub func:chase_lev_pop = int32(int64: deque) {
+    if (deque == 0) { pass -1; }
+    
+    int64: bottom = raw read_int64(deque + 8) - 1;
+    drop write_int64(deque + 8, bottom);
+    
+    int64: top = raw read_int64(deque + 0);
+    
+    if (top <= bottom) {
+        int64: idx = bottom % 128;
+        int64: item_ptr = deque + 16 + (idx * 4);
+        int32: task = raw read_int32(item_ptr);
+        
+        if (top != bottom) {
+            pass task;
+        }
+        
+        // Single element left, structurally requires CAS in concurrent case
+        // Single-threaded fast path simulation:
+        drop write_int64(deque + 0, top + 1);
+        drop write_int64(deque + 8, top + 1);
+        pass task;
+    } else {
+        drop write_int64(deque + 8, top);
+        pass -1;
+    }
+};
