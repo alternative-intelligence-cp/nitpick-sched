@@ -1,0 +1,28 @@
+pub func:ptr_to_int = int64(any->: ptr) {
+    pass asm!!!<int64>("x86_64", "movq $1, $0", "=r,r", ptr);
+};
+pub func:read_int64 = int64(int64: ptr) {
+    pass asm!!!<int64>("x86_64", "movq ($1), $0", "=r,r", ptr);
+};
+pub func:read_int32 = int32(int64: ptr) {
+    pass asm!!!<int32>("x86_64", "movl ($1), $0", "=r,r", ptr);
+};
+pub func:read_bool = bool(int64: ptr) {
+    int8: b = asm!!!<int8>("x86_64", "movb ($1), $0", "=q,r", ptr);
+    if (b == 0) { pass false; }
+    pass true;
+};
+pub func:write_int64 = int32(int64: ptr, int64: val) {
+    pass asm!!!<int32>("x86_64", "movq $2, ($1)", "=r,r,r", ptr, val);
+};
+pub func:write_int32 = int32(int64: ptr, int32: val) {
+    pass asm!!!<int32>("x86_64", "movl $2, ($1)", "=r,r,r", ptr, val);
+};
+pub func:write_bool = int32(int64: ptr, bool: val) {
+    int8: b = 0;
+    if (val) { b = 1; }
+    pass asm!!!<int32>("x86_64", "movb $2, ($1)", "=r,r,q", ptr, b);
+};
+pub func:int32_to_int64 = int64(int32: val) {
+    pass asm!!!<int64>("x86_64", "movslq $1, $0", "=r,r", val);
+};

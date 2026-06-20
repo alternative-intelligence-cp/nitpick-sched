@@ -1,0 +1,54 @@
+use "../../src/fairness/rbtree.npk".*;
+use "../../src/structs/memory_helpers.npk".*;
+
+pub func:proc_exit = int32(int32: code) {
+    int32: dummy = asm!!!<int32>("x86_64", "movl $1, %edi; movl $$60, %eax; syscall", "=r,r", code);
+    pass 0;
+};
+
+pub func:main = int32() {
+    RBTree->: tree = raw rbt_init(128);
+    if (tree == NULL) { exit 1; }
+    
+    // Insert tasks: vruntime, pid, handle
+    int32: n1 = raw rbt_insert(tree, 500, 10, 100);
+    int32: n2 = raw rbt_insert(tree, 300, 11, 101);
+    int32: n3 = raw rbt_insert(tree, 800, 12, 102);
+    int32: n4 = raw rbt_insert(tree, 300, 9,  103); // Tie break pid 9 < 11
+    
+    // Extract min should be strictly O(1) since we read leftmost cache
+    int32: min_node = raw rbt_peek_min(tree);
+    if (min_node == -1) { exit 2; }
+    
+    // The lowest vruntime is 300. There's PID 9 and 11.
+    // PID 9 is smaller than 11, so n4 should be leftmost.
+    if (min_node != n4) { exit 3; }
+    
+    int32: h1 = raw rbt_extract_min(tree);
+    if (h1 != 103) { exit 4; } // handle 103
+    
+    // Next min should be n2 (vruntime 300, pid 11)
+    min_node = raw rbt_peek_min(tree);
+    if (min_node != n2) { exit 5; }
+    
+    int32: h2 = raw rbt_extract_min(tree);
+    if (h2 != 101) { exit 6; }
+    
+    // Next min should be n1 (vruntime 500)
+    int32: h3 = raw rbt_extract_min(tree);
+    if (h3 != 100) { exit 7; }
+    
+    // Next min should be n3 (vruntime 800)
+    int32: h4 = raw rbt_extract_min(tree);
+    if (h4 != 102) { exit 8; }
+    
+    // Tree should be empty
+    if (raw rbt_peek_min(tree) != -1) { exit 9; }
+    if (raw rbt_extract_min(tree) != -1) { exit 10; }
+
+    exit 0;
+};
+
+func:failsafe = int32(tbb32:err) {
+    exit 99;
+};
