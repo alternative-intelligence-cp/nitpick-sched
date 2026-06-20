@@ -1,0 +1,5 @@
+// init.npk — scaffold file for nitpick-sched
+
+struct:Dummy = {
+    int32: id;
+};

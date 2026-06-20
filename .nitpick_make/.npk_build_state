@@ -1,0 +1,19 @@
+{
+  "version": "1.0",
+  "toolchain": {
+    "compiler_version": "/home/randy/Workspace/REPOS/nitpick/build/npkc",
+    "compiler_hash": ""
+  },
+  "targets": {
+    "nitpick_sched": {
+      "artifact_path": ".nitpick_make/build/libnitpick_sched.a",
+      "source_hash": "fnv1a:5532187280866699224",
+      "command_hash": 3228159234492003309,
+      "source_timestamp": 18446744069053872692,
+      "build_timestamp": 1781985087,
+      "build_duration_ms": 78,
+      "dependencies": [],
+      "implicit_inputs": []
+    }
+  }
+}
