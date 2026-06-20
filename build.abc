@@ -15,3 +15,8 @@ flags = ["-O3", "--verify"]
 type = "binary"
 sources = ["tests/unit/test_tcb.npk"]
 flags = ["-O3", "--verify"]
+
+[target.test_clock]
+type = "binary"
+sources = ["tests/unit/test_clock.npk"]
+flags = ["-O3", "--verify"]

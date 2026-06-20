@@ -1,0 +1,23 @@
+// utils.npk — Test utilities
+use "../src/structs/tcb.npk".TCB;
+
+pub struct:MockClock = {
+    fix256: current_time;
+};
+
+pub func:create_mock_tcb = TCB(int64:pid, fix256:vruntime) {
+    TCB: t;
+    t.pid = pid;
+    t.ctx.vruntime = vruntime;
+    t.ctx.budget = 10000 => fix256;
+    t.ctx.period = 100000 => fix256;
+    t.ctx.nice_value = 0;
+    pass t;
+};
+
+pub func:clock_advance = NIL(MockClock->:clock, fix256:delta) {
+    fix256: cur = clock->current_time;
+    cur = cur + delta;
+    clock->current_time = cur;
+    pass NIL;
+};
