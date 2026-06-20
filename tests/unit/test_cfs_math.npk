@@ -1,0 +1,50 @@
+use "../../src/fairness/cfs_math.npk".*;
+
+pub func:proc_exit = int32(int32: code) {
+    int32: dummy = asm!!!<int32>("x86_64", "movl $1, %edi; movl $$60, %eax; syscall", "=r,r", code);
+    pass 0;
+};
+
+pub func:main = int32() {
+    // 1. Test calc_vruntime_delta
+    // delta = 10.0, weight = 1024.0 (NICE 0) -> delta = 10.0 * 1024 / 1024 = 10.0
+    fix256: d1_exec = 10.0;
+    fix256: w1 = 1024.0;
+    fix256: d1 = raw calc_vruntime_delta(d1_exec, w1);
+    
+    fix256: e1 = 10.0;
+    if (d1 != e1) { exit 1; }
+    
+    // delta = 10.0, weight = 2048.0 -> delta = 10.0 * 1024 / 2048 = 5.0
+    fix256: w2 = 2048.0;
+    fix256: d2 = raw calc_vruntime_delta(d1_exec, w2);
+    
+    fix256: e2 = 5.0;
+    if (d2 != e2) { exit 2; }
+    
+    // 2. Test calc_ideal_runtime
+    fix256: target = 6.0;
+    fix256: min_gran = 0.75;
+    
+    fix256: tw1 = 3000.0;
+    fix256: rw1 = 1000.0;
+    // total = 3000, weight = 1000 -> ideal = 6.0 * (1000/3000) = 2.0
+    fix256: i1 = raw calc_ideal_runtime(target, min_gran, rw1, tw1);
+    
+    fix256: e3 = 2.0;
+    if (i1 != e3) { exit 3; }
+    
+    // total = 30000, weight = 1000 -> ideal = 6.0 * (1000/30000) = 0.2
+    // BUT min_gran = 0.75, so should clamp to 0.75
+    fix256: tw2 = 30000.0;
+    fix256: i2 = raw calc_ideal_runtime(target, min_gran, rw1, tw2);
+    
+    fix256: e4 = 0.75;
+    if (i2 != e4) { exit 4; }
+    
+    exit 0;
+};
+
+func:failsafe = int32(tbb32:err) {
+    exit 99;
+};

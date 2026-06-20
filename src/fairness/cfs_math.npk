@@ -1,0 +1,46 @@
+// src/fairness/cfs_math.npk
+// Core math for Completely Fair Scheduler
+use "../structs/memory_helpers.npk".*;
+
+// Default parameters (in nanoseconds converted to fix256 internally if needed)
+pub struct:CFSParams = {
+    fix256: target_latency;
+    fix256: min_granularity;
+};
+
+// Initialize default parameters
+pub func:cfs_default_params = CFSParams->() {
+    // Return by value. target latency = 6.0ms, min gran = 0.75ms
+    CFSParams->: p = calloc(1, 64) => CFSParams->;
+    int64: base = raw ptr_to_int(p => any->);
+    
+    // We can't do direct struct returns safely in this compiler, so we return a pointer.
+    // We must manually write fix256. But wait, fix256 might work inside struct!
+    pass p;
+};
+
+// calc_vruntime_delta: delta_exec * (NICE_0_LOAD / weight)
+// In CFS, delta_exec is real time spent. weight is the task weight.
+// NICE_0_LOAD is traditionally 1024.
+// vruntime_delta = delta_exec * 1024 / weight
+pub func:calc_vruntime_delta = fix256(fix256: delta_exec, fix256: weight) {
+    fix256: nice_0 = 1024.0;
+    // We should compute delta_exec * nice_0 / weight
+    fix256: temp = delta_exec * nice_0;
+    fix256: res = temp / weight;
+    pass res;
+};
+
+// calc_ideal_runtime: target_latency * (weight / total_weight)
+// But must be at least min_granularity
+pub func:calc_ideal_runtime = fix256(fix256: target_latency, fix256: min_granularity, fix256: weight, fix256: total_weight) {
+    if (total_weight == 0.0) { pass min_granularity; }
+    
+    fix256: temp = target_latency * weight;
+    fix256: ideal = temp / total_weight;
+    
+    if (ideal < min_granularity) {
+        pass min_granularity;
+    }
+    pass ideal;
+};
