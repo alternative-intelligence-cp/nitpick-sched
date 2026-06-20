@@ -20,3 +20,8 @@ flags = ["-O3", "--verify"]
 type = "binary"
 sources = ["tests/unit/test_clock.npk"]
 flags = ["-O3", "--verify"]
+
+[target.test_arena]
+type = "binary"
+sources = ["tests/unit/test_arena.npk"]
+flags = ["-O3", "--verify"]

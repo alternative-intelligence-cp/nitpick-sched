@@ -1,0 +1,88 @@
+// src/structs/arena.npk — Generational Arena allocator
+use "tcb.npk".TCB;
+use "handle.npk".IdxHandle;
+
+pub struct:ArenaSlot = {
+    TCB: item;
+    int32: generation;
+    int64: next_free;
+    bool: occupied;
+};
+
+pub struct:TCBArena = {
+    ArenaSlot->: slots;
+    int64: capacity;
+    int64: count;
+    int64: first_free;
+};
+
+pub func:arena_init = NIL(TCBArena->:arena) {
+    arena->capacity = 1024;
+    arena->count = 0;
+    arena->first_free = 0;
+    
+    arena->slots = calloc(1024, 256) => ArenaSlot->;
+    
+    int64: i = 0;
+    while (i < 1024) {
+        arena->slots[i].generation = 1;
+        arena->slots[i].occupied = false;
+        arena->slots[i].next_free = i + 1;
+        i = i + 1;
+    }
+    arena->slots[1023].next_free = -1;
+    pass NIL;
+};
+
+pub func:tcb_arena_allocate = IdxHandle<TCB>(TCBArena->:arena) {
+    if (arena->first_free == -1) {
+        IdxHandle<TCB>: invalid;
+        invalid.index = -1;
+        invalid.generation = 0;
+        pass invalid;
+    }
+    
+    int64: idx = arena->first_free;
+    arena->first_free = arena->slots[idx].next_free;
+    
+    arena->slots[idx].occupied = true;
+    arena->slots[idx].next_free = -1;
+    
+    arena->count = arena->count + 1;
+    
+    IdxHandle<TCB>: h;
+    h.index = idx;
+    h.generation = arena->slots[idx].generation;
+    pass h;
+};
+
+pub func:tcb_arena_get = TCB->(TCBArena->:arena, IdxHandle<TCB>:h) {
+    if (h.index < 0) { fail 10 => tbb32; }
+    if (h.index >= 1024) { fail 20 => tbb32; }
+    if (!arena->slots[h.index].occupied) {
+        fail 30 => tbb32;
+    }
+    if (arena->slots[h.index].generation != h.generation) {
+        fail 40 => tbb32;
+    }
+    pass @(arena->slots[h.index].item);
+};
+
+pub func:tcb_arena_release = bool(TCBArena->:arena, IdxHandle<TCB>:h) {
+    if (h.index < 0) { pass false; }
+    if (h.index >= 1024) { pass false; }
+    if (!arena->slots[h.index].occupied) {
+        pass false;
+    }
+    if (arena->slots[h.index].generation != h.generation) {
+        pass false;
+    }
+    
+    arena->slots[h.index].occupied = false;
+    arena->slots[h.index].generation = arena->slots[h.index].generation + 1;
+    arena->slots[h.index].next_free = arena->first_free;
+    arena->first_free = h.index;
+    
+    arena->count = arena->count - 1;
+    pass true;
+};

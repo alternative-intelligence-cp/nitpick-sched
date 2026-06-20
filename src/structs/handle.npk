@@ -1,0 +1,5 @@
+// handle.npk
+pub struct:IdxHandle<T> = {
+    int64: index;
+    int32: generation;
+};

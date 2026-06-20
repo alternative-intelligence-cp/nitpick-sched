@@ -1,0 +1,31 @@
+use "../../src/structs/arena.npk".{TCBArena, arena_init, tcb_arena_allocate, tcb_arena_get, tcb_arena_release};
+use "../../src/structs/handle.npk".IdxHandle;
+use "../../src/structs/tcb.npk".TCB;
+
+func:main = int32() {
+    TCBArena: arena;
+    arena.capacity = 1024;
+    drop arena_init(@arena);
+    
+    IdxHandle<TCB>: h1 = raw tcb_arena_allocate(@arena);
+    if (h1.index == -1) { exit 1; }
+    
+    Result<TCB->>: r1 = tcb_arena_get(@arena, h1);
+    if (r1.is_error) { exit r1.error => int32; }
+    TCB->: t1 = r1.value;
+    
+    t1->pid = 42;
+    
+    bool: freed = raw tcb_arena_release(@arena, h1);
+    if (!freed) { exit 3; }
+    
+    // Test invalidation
+    Result<TCB->>: r2 = tcb_arena_get(@arena, h1);
+    if (!r2.is_error) { exit 4; }
+    
+    exit 0;
+};
+
+func:failsafe = int32(tbb32:err) {
+    exit 1;
+};

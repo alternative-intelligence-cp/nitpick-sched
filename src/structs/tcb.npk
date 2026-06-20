@@ -1,9 +1,11 @@
 // tcb.npk — Task Control Block definition
 use "context.npk".TaskContext;
+use "handle.npk".IdxHandle;
 
 pub struct:TCB = {
     int64: pid;
     TaskContext: ctx;
-    Handle<TCB>: next;
+    IdxHandle<TCB>: next;
+    IdxHandle<TCB>: prev;
     any->: kernel_stack;
 };
