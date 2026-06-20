@@ -26,3 +26,7 @@ pub func:write_bool = int32(int64: ptr, bool: val) {
 pub func:int32_to_int64 = int64(int32: val) {
     pass asm!!!<int64>("x86_64", "movslq $1, $0", "=r,r", val);
 };
+
+pub func:int64_to_int32 = int32(int64: val) {
+    pass asm!!!<int32>("x86_64", "movq $1, %rax; movl %eax, $0", "=r,r", val);
+};

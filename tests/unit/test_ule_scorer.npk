@@ -1,0 +1,36 @@
+use "../../src/fairness/ule_scorer.npk".*;
+
+pub func:proc_exit = int32(int32: code) {
+    int32: dummy = asm!!!<int32>("x86_64", "movl $1, %edi; movl $$60, %eax; syscall", "=r,r", code);
+    pass 0;
+};
+
+pub func:main = int32() {
+    // 1. Extreme edge cases
+    // Both zero
+    int32: s1 = raw calculate_interactivity(0, 0);
+    if (s1 != 0) { exit 1; }
+    
+    // 0 run time, some sleep time (maximum interactivity)
+    int32: s2 = raw calculate_interactivity(500, 0);
+    if (s2 != 100) { exit 2; }
+    
+    // 0 sleep time, some run time (minimum interactivity)
+    int32: s3 = raw calculate_interactivity(0, 500);
+    if (s3 != 0) { exit 3; }
+    
+    // 2. Normal cases
+    // 50% sleep time, 50% run time -> 50 score
+    int32: s4 = raw calculate_interactivity(200, 200);
+    if (s4 != 50) { exit 4; }
+    
+    // 75% sleep time -> 75 score
+    int32: s5 = raw calculate_interactivity(300, 100);
+    if (s5 != 75) { exit 5; }
+    
+    exit 0;
+};
+
+func:failsafe = int32(tbb32:err) {
+    exit 99;
+};

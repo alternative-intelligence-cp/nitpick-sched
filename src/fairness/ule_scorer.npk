@@ -1,0 +1,34 @@
+// src/fairness/ule_scorer.npk
+// ULE Interactivity Scorer
+
+use "../structs/memory_helpers.npk".*;
+
+Rules:ScoreBounds = {
+    $ >= 0,
+    $ <= 100
+};
+
+pub func:calculate_interactivity = int32(int64: sleep_time, int64: run_time) {
+    if (sleep_time == 0 && run_time == 0) {
+        limit<ScoreBounds> int32: default_score = 0;
+        pass default_score;
+    }
+    
+    // Total time observed
+    int64: total = sleep_time + run_time;
+    if (total == 0) {
+        limit<ScoreBounds> int32: safe_score = 0;
+        pass safe_score;
+    }
+    
+    // Scale sleep_time to percentage (0-100)
+    int64: score64 = (sleep_time * 100) / total;
+    
+    // Clamp manually just in case, though the math guarantees 0-100
+    if (score64 < 0) { score64 = 0; }
+    if (score64 > 100) { score64 = 100; }
+    
+    limit<ScoreBounds> int32: score = raw int64_to_int32(score64);
+    
+    pass score;
+};
