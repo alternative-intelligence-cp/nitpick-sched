@@ -1,0 +1,133 @@
+// pid_map.npk — Map from PID (int64) to IdxHandle<TCB>
+use "tcb.npk".TCB;
+use "handle.npk".IdxHandle;
+
+pub struct:PidMapSlot = {
+    int64: pid;
+    int64: handle_idx;
+    int64: handle_gen;
+    bool: occupied; // 0 = false, 1 = true
+};
+
+pub struct:PidMap = {
+    PidMapSlot->: slots;
+    int64: capacity;
+    int64: count;
+};
+
+pub func:pid_map_init = NIL(PidMap->:map) {
+    map->capacity = 1024;
+    map->count = 0;
+    // PidMapSlot is approx 8 + 12 + 1 = 21 bytes. Allocate 32 bytes per slot.
+    int64: total_bytes = 1024 * 32;
+    map->slots = calloc(1024, 32) => PidMapSlot->;
+    
+    int64: i = 0;
+    while (i < 1024) {
+        map->slots[i].occupied = false;
+        i = i + 1;
+    }
+    pass NIL;
+};
+
+// Simple hash: modular arithmetic
+func:hash_pid = int64(int64:pid, int64:capacity) {
+    int64: h = pid % capacity;
+    if (h < 0) { h = h + capacity; }
+    pass h;
+};
+
+func:pid_map_insert_rec = int32(PidMap->:map, int64:pid, IdxHandle<TCB>->:handle_ptr, int64: h, int64: iters, int64: cap) {
+    if (iters >= cap) {
+        pass 99;
+    }
+    
+    if (map->slots[h].occupied) {
+        if (map->slots[h].pid == pid) {
+            map->slots[h].handle_idx = handle_ptr->index;
+            map->slots[h].handle_gen = handle_ptr->generation;
+            pass 0;
+        }
+        
+        int64: next_h = h + 1;
+        if (next_h >= cap) { next_h = 0; }
+        
+        pass raw pid_map_insert_rec(map, pid, handle_ptr, next_h, iters + 1, cap);
+    } else {
+        map->slots[h].pid = pid;
+        map->slots[h].handle_idx = handle_ptr->index;
+        map->slots[h].handle_gen = handle_ptr->generation;
+        map->slots[h].occupied = true;
+        map->count = map->count + 1;
+        pass 0;
+    }
+};
+
+pub func:pid_map_insert = int32(PidMap->:map, int64:pid, IdxHandle<TCB>->:handle_ptr) {
+    if (map->count >= map->capacity) {
+        pass 88;
+    }
+    
+    int64: cap = map->capacity;
+    int64: h = raw hash_pid(pid, cap);
+    
+    pass raw pid_map_insert_rec(map, pid, handle_ptr, h, 0, cap);
+};
+
+
+func:pid_map_lookup_rec = IdxHandle<TCB>(PidMap->:map, int64:pid, int64:h, int64:iters, int64:cap) {
+    if (iters >= cap) {
+        IdxHandle<TCB>: invalid;
+        invalid.index = -1;
+        invalid.generation = 0;
+        pass invalid;
+    }
+    
+    if (map->slots[h].occupied) {
+        if (map->slots[h].pid == pid) {
+            IdxHandle<TCB>: valid;
+            valid.index = map->slots[h].handle_idx;
+            valid.generation = map->slots[h].handle_gen;
+            pass valid;
+        }
+        int64: next_h = h + 1;
+        if (next_h >= cap) { next_h = 0; }
+        pass raw pid_map_lookup_rec(map, pid, next_h, iters + 1, cap);
+    } else {
+        IdxHandle<TCB>: invalid;
+        invalid.index = -1;
+        invalid.generation = 0;
+        pass invalid;
+    }
+};
+
+pub func:pid_map_lookup = IdxHandle<TCB>(PidMap->:map, int64:pid) {
+    int64: cap = map->capacity;
+    int64: h = raw hash_pid(pid, cap);
+    pass raw pid_map_lookup_rec(map, pid, h, 0, cap);
+};
+
+func:pid_map_remove_rec = bool(PidMap->:map, int64:pid, int64:h, int64:iters, int64:cap) {
+    if (iters >= cap) {
+        pass false;
+    }
+    
+    if (map->slots[h].occupied) {
+        if (map->slots[h].pid == pid) {
+            map->slots[h].occupied = false;
+            map->count = map->count - 1;
+            pass true;
+        }
+        int64: next_h = h + 1;
+        if (next_h >= cap) { next_h = 0; }
+        pass raw pid_map_remove_rec(map, pid, next_h, iters + 1, cap);
+    } else {
+        pass false;
+    }
+};
+
+pub func:pid_map_remove = bool(PidMap->:map, int64:pid) {
+    int64: cap = map->capacity;
+    int64: h = raw hash_pid(pid, cap);
+    pass raw pid_map_remove_rec(map, pid, h, 0, cap);
+};
