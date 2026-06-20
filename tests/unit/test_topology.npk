@@ -1,0 +1,56 @@
+// tests/unit/test_topology.npk
+// Verifies Logical Processor initialization and Worker count
+
+use "../../src/smp/topology.npk".*;
+use "../../src/structs/memory_helpers.npk".*;
+
+pub func:proc_exit = int32(int32: code) {
+    int32: dummy = asm!!!<int32>("x86_64", "movl $1, %edi; movl $$60, %eax; syscall", "=r,r", code);
+    pass 0;
+};
+
+pub func:main = int32() {
+    int32: cores = raw get_core_count();
+    if (cores <= 0) {
+        exit 1;
+    }
+    
+    int64: workers_array = raw init_topology();
+    if (workers_array == 0) {
+        exit 2;
+    }
+    
+    // Check first worker init values
+    int64: first_deque = raw read_int64(workers_array);
+    if (first_deque != 0) {
+        exit 3;
+    }
+    
+    int64: first_seed = raw read_int64(workers_array + 8);
+    if (first_seed != 1) {
+        exit 4;
+    }
+    
+    // Check last worker init values
+    int64: core64 = raw int32_to_int64(cores);
+    int64: last_idx = core64 - 1;
+    int64: last_offset = last_idx * 16;
+    int64: last_ptr = workers_array + last_offset;
+    
+    int64: last_deque = raw read_int64(last_ptr);
+    if (last_deque != 0) {
+        exit 5;
+    }
+    
+    int64: expected_seed = last_idx + 1;
+    int64: last_seed = raw read_int64(last_ptr + 8);
+    if (last_seed != expected_seed) {
+        exit 6;
+    }
+    
+    exit 0;
+};
+
+func:failsafe = int32(tbb32:err) {
+    exit 99;
+};
