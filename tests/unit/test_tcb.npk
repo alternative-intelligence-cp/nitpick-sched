@@ -1,0 +1,12 @@
+// test_tcb.npk
+use "../../src/structs/tcb.npk".TCB;
+
+func:main = int32() {
+    TCB: t;
+    t.pid = 1;
+    exit 0;
+};
+
+func:failsafe = int32(tbb32:err) {
+    exit 1;
+};

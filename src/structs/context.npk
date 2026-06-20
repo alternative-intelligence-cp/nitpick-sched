@@ -1,0 +1,9 @@
+// context.npk — Scheduling Context definition
+
+pub struct:TaskContext = {
+    fix256: vruntime;
+    fix256: budget;
+    fix256: period;
+    int32: nice_value;
+    atomic<int32>: state;
+};

@@ -8,7 +8,10 @@ compiler = "/home/randy/Workspace/REPOS/nitpick/build/npkc"
 
 [target.nitpick_sched]
 type = "library"
-sources = ["src/core/init.npk"]
+sources = ["src/core/init.npk", "src/structs/context.npk", "src/structs/tcb.npk"]
 flags = ["-O3", "--verify"]
 
-
+[target.test_tcb]
+type = "binary"
+sources = ["tests/unit/test_tcb.npk"]
+flags = ["-O3", "--verify"]

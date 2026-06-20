@@ -1,0 +1,9 @@
+// tcb.npk — Task Control Block definition
+use "context.npk".TaskContext;
+
+pub struct:TCB = {
+    int64: pid;
+    TaskContext: ctx;
+    Handle<TCB>: next;
+    any->: kernel_stack;
+};
