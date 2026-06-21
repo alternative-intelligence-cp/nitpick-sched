@@ -1,0 +1,49 @@
+use "../../src/isolation/context.npk".*;
+use "../../src/structs/memory_helpers.npk".*;
+
+pub func:proc_exit = int32(int32: code) {
+    int32: dummy = asm!!!<int32>("x86_64", "movl $1, %edi; movl $$60, %eax; syscall", "=r,r", code);
+    pass(0i64);
+};
+
+pub func:main = int32() {
+    SchedulingContext->: sc = calloc(1i64, 96i64) => SchedulingContext->;
+    // Pad to allocate memory
+    
+    drop sc_init(sc, 1000i64, 5000i64);
+    
+    int64: base = raw ptr_to_int(sc => any->);
+    int64: budget = raw read_int64(base + 0i64);
+    int64: period = raw read_int64(base + 32i64);
+    int64: consumed = raw read_int64(base + 64i64);
+    
+    if (budget != 1000i64) { exit 1i64; }
+    if (period != 5000i64) { exit 2i64; }
+    if (consumed != 0i64) { exit 3i64; }
+    
+    if (raw sc_exhausted(sc)) { exit 4i64; }
+    
+    drop sc_consume(sc, 500i64);
+    consumed = raw read_int64(base + 64i64);
+    if (consumed != 500i64) { exit 5i64; }
+    if (raw sc_exhausted(sc)) { exit 6i64; }
+    
+    drop sc_consume(sc, 500i64);
+    consumed = raw read_int64(base + 64i64);
+    if (consumed != 1000i64) { exit 7i64; }
+    if (!raw sc_exhausted(sc)) { exit 8i64; }
+    
+    drop sc_consume(sc, 100i64);
+    if (!raw sc_exhausted(sc)) { exit 9i64; }
+    
+    drop sc_replenish(sc);
+    consumed = raw read_int64(base + 64i64);
+    if (consumed != 0i64) { exit 10i64; }
+    if (raw sc_exhausted(sc)) { exit 11i64; }
+
+    exit 0i64;
+};
+
+func:failsafe = int32(tbb32:err) {
+    exit 99i64;
+};

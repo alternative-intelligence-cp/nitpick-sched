@@ -1,0 +1,1 @@
+pub struct:IntResult = { int32: value; }; pub func:failsafe = int32(tbb32:err) { exit 1i64; }; pub func:foo = IntResult() { IntResult: res; res.value = 115i64; pass(res); }; pub func:main = int32() { IntResult: r = raw foo(); if (r.value == 115i64) { exit 42i64; } exit 1i64; };

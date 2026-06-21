@@ -1,0 +1,46 @@
+use "../../src/isolation/replenish.npk".*;
+use "../../src/structs/memory_helpers.npk".*;
+
+pub func:proc_exit = int32(int32: code) {
+    int32: dummy = asm!!!<int32>("x86_64", "movl $1, %edi; movl $$60, %eax; syscall", "=r,r", code);
+    pass(0i64);
+};
+
+pub func:main = int32() {
+    ReplenishQueue->: rq = raw rq_init(16i64);
+    if (rq == NULL) { exit 1i64; }
+    
+    // enqueue 10i64 micro-yield (should coalesce to 100i64)
+    int32: res = raw rq_enqueue(rq, 5000i64, 10i64);
+    if (res != 0i64) { exit 2i64; }
+    
+    // enqueue 500i64
+    res = raw rq_enqueue(rq, 6000i64, 500i64);
+    if (res != 0i64) { exit 3i64; }
+    
+    // check peek
+    if (raw rq_peek_time(rq) != 5000i64) { exit 4i64; }
+    
+    int64: out_time = 0i64;
+    int64: out_amt = raw rq_dequeue(rq, @out_time);
+    
+    // Amount coalesced to 100i64
+    if (out_amt != 100i64) { exit 5i64; }
+    if (out_time != 5000i64) { exit 6i64; }
+    
+    // check next peek
+    if (raw rq_peek_time(rq) != 6000i64) { exit 7i64; }
+    
+    out_amt = raw rq_dequeue(rq, @out_time);
+    if (out_amt != 500i64) { exit 8i64; }
+    if (out_time != 6000i64) { exit 9i64; }
+    
+    out_amt = raw rq_dequeue(rq, @out_time);
+    if (out_amt != -1i64) { exit 10i64; }
+
+    exit 0i64;
+};
+
+func:failsafe = int32(tbb32:err) {
+    exit 99i64;
+};

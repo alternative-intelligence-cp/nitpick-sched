@@ -1,0 +1,11 @@
+pub struct:Arena = { int64->: slots; };
+pub func:main = int32() {
+    Arena: a;
+    a.slots = calloc(10i64, 8i64) => int64->;
+    a.slots[2i64] = 42i64;
+    int64: out = 0i64;
+    out = asm!!!<int64>("x86_64", "movq 16($1), $0", "=r,r", a.slots => any->);
+    if (out != 42i64) { exit 1i64; }
+    exit 0i64;
+};
+pub func:failsafe = int32(tbb32:err) { exit 99i64; };

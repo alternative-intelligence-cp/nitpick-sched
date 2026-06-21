@@ -1,0 +1,15 @@
+use "arena.npk".{TCBArena, arena_init, tcb_arena_allocate};
+use "handle.npk".IdxHandle;
+use "tcb.npk".TCB;
+
+pub func:main = int32() {
+    TCBArena: arena;
+    arena.capacity = 1024i64;
+    Result<NIL>: r = arena_init(@arena);
+    
+    Result<IdxHandle<TCB> >: rh1 = tcb_arena_allocate(@arena);
+    IdxHandle<TCB>: h1 = rh1.value;
+    
+    exit h1.index => int32;
+};
+pub func:failsafe = int32(tbb32:err) { exit 99i64; };

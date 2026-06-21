@@ -1,0 +1,66 @@
+// src/fairness/rbtree.npk
+use "../structs/memory_helpers.npk".*;
+
+pub struct:RBTree = {
+    int32: root;
+    int32: leftmost;
+    int32: capacity;
+    int32: free_head;
+    // Nodes follow in memory
+};
+
+// Node offsets
+// 0: left (int32)
+// 4: right (int32)
+// 8: parent (int32)
+// 12: color (int32) [0=black, 1=red]
+// 16: vruntime (int64)
+// 24: pid (int64)
+// 32: tcb_handle (int32)
+// 36: next_free (int32)
+
+pub func:rbt_init = RBTree->(int32: cap) {
+    int64: bytes = 16 + (cap * 40);
+    RBTree->: tree = calloc(1, bytes) => RBTree->;
+    int64: base = raw ptr_to_int(tree => any->);
+    drop write_int32(base + 0, -1); // root
+    drop write_int32(base + 4, -1); // leftmost
+    drop write_int32(base + 8, cap); // capacity
+    drop write_int32(base + 12, 0); // free_head
+    
+    // Initialize free list
+    int32: i = 0;
+    while (i < cap) {
+        int64: ptr = base + 16 + (i * 40);
+        int32: next = i + 1;
+        if (next == cap) { next = -1; }
+        drop write_int32(ptr + 36, next);
+        i = i + 1;
+    }
+    pass tree;
+};
+
+pub func:get_ptr = int64(RBTree->:tree, int32: idx) {
+    int64: base = raw ptr_to_int(tree => any->);
+    pass base + 16 + (idx * 40);
+};
+
+pub func:rbt_alloc = int32(RBTree->:tree) {
+    int64: base = raw ptr_to_int(tree => any->);
+    int32: free_head = raw read_int32(base + 12);
+    if (free_head == -1) { pass -1; }
+    
+    int64: ptr = raw get_ptr(tree, free_head);
+    int32: next_free = raw read_int32(ptr + 36);
+    drop write_int32(base + 12, next_free);
+    
+    // Clear node
+    drop write_int32(ptr + 0, -1);
+    drop write_int32(ptr + 4, -1);
+    drop write_int32(ptr + 8, -1);
+    drop write_int32(ptr + 12, 1); // Red by default
+    drop write_int32(ptr + 36, -1);
+    pass free_head;
+};
+
+// ... BST insert

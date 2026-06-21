@@ -4,51 +4,51 @@ use "../../src/structs/memory_helpers.npk".*;
 
 pub func:proc_exit = int32(int32: code) {
     int32: dummy = asm!!!<int32>("x86_64", "movl $1, %edi; movl $$60, %eax; syscall", "=r,r", code);
-    pass 0;
+    pass(0i64);
 };
 
 pub func:main = int32() {
     int64: src_deque = raw chase_lev_init();
-    if (src_deque == 0) { exit 1; }
+    if (src_deque == 0i64) { exit 1i64; }
     
     int64: dst_deque = raw chase_lev_init();
-    if (dst_deque == 0) { exit 2; }
+    if (dst_deque == 0i64) { exit 2i64; }
     
-    // Push 100 items into src_deque
-    int32: i = 0;
-    while (i < 100) {
+    // Push 100i64 items into src_deque
+    int32: i = 0i64;
+    while (i < 100i64) {
         bool: p = raw chase_lev_push(src_deque, i);
-        if (!p) { exit 3; }
-        i = i + 1;
+        if (!p) { exit 3i64; }
+        i = i + 1i64;
     }
     
-    // Perform O(1) batch steal half
+    // Perform O(1i64) batch steal half
     int32: stolen = raw rebalance_steal_half(src_deque, dst_deque);
-    if (stolen != 50) { exit 4; }
+    if (stolen != 50i64) { exit 4i64; }
     
-    // src_deque should have 50 items remaining (50 to 99)
-    // Stealing from src_deque should yield 50, then 51...
+    // src_deque should have 50i64 items remaining (50i64 to 99i64)
+    // Stealing from src_deque should yield 50i64, then 51i64...
     int32: t0 = raw chase_lev_steal(src_deque);
-    if (t0 != 50) { exit 5; }
+    if (t0 != 50i64) { exit 5i64; }
     
-    // dst_deque should have 50 items (0 to 49)
-    // Since they were pushed as 49, 48... 0, popping from bottom should yield 0, 1...
+    // dst_deque should have 50i64 items (0i64 to 49i64)
+    // Since they were pushed as 49i64, 48i64... 0i64, popping from bottom should yield 0i64, 1i64...
     // Wait, let's pop them from dst_deque's owner thread (which means chase_lev_steal won't work if bottom isn't advanced? No, chase_lev_push advances bottom).
     // Let's steal from dst_deque to verify they are there.
     // Stealing from dst_deque (top) will steal the OLDEST pushed item.
-    // The first item pushed to dst_deque was 49. So top points to 49.
+    // The first item pushed to dst_deque was 49i64. So top points to 49i64.
     int32: d0 = raw chase_lev_steal(dst_deque);
-    if (d0 != 49) { exit 6; }
+    if (d0 != 49i64) { exit 6i64; }
     
-    // The second item pushed was 48...
+    // The second item pushed was 48i64...
     int32: d1 = raw chase_lev_steal(dst_deque);
-    if (d1 != 48) { exit 7; }
+    if (d1 != 48i64) { exit 7i64; }
     
     // If we pop from dst_deque (owner path), wait, we didn't expose chase_lev_pop in chase_lev.npk!
     // We only exposed push and steal! Let's check chase_lev.npk.
-    // Let's just steal everything from dst_deque. It should be 47, 46... 0.
+    // Let's just steal everything from dst_deque. It should be 47i64, 46i64... 0i64.
     
-    exit 0;
+    exit 0i64;
 };
 
-func:failsafe = int32(tbb32:err) { exit 99; };
+func:failsafe = int32(tbb32:err) { exit 99i64; };

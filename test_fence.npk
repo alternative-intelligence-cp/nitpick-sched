@@ -1,0 +1,12 @@
+func:npk_shim_atomic_thread_fence = NIL(int32:order);
+
+pub func:proc_exit = int32(int32: code) {
+    int32: dummy = asm!!!<int32>("x86_64", "movl $1, %edi; movl $$60, %eax; syscall", "=r,r", code);
+    pass 0;
+};
+
+pub func:main = int32() {
+    drop raw npk_shim_atomic_thread_fence(5);
+    exit 0;
+};
+func:failsafe = int32(tbb32:err) { exit 99; };

@@ -9,77 +9,77 @@ pub struct:CFSParams = {
 };
 
 // Initialize default parameters
-pub func:cfs_default_params = CFSParams->() {
-    // Return by value. target latency = 6.0ms, min gran = 0.75ms
-    CFSParams->: p = calloc(1, 64) => CFSParams->;
+pub func:cfs_default_params = wild CFSParams->() {
+    // Return by value. target latency = 6i64.0ms, min gran = 0i64.7fix2565ms
+    wild CFSParams->: p = calloc(1i64, 64i64) => CFSParams->;
     int64: base = raw ptr_to_int(p => any->);
     
     // We can't do direct struct returns safely in this compiler, so we return a pointer.
     // We must manually write fix256. But wait, fix256 might work inside struct!
-    pass p;
+    pass(p);
 };
 
 // calc_vruntime_delta: delta_exec * (NICE_0_LOAD / weight)
 // In CFS, delta_exec is real time spent. weight is the task weight.
-// NICE_0_LOAD is traditionally 1024.
-// vruntime_delta = delta_exec * 1024 / weight
+// NICE_0_LOAD is traditionally 1024i64.
+// vruntime_delta = delta_exec * 1024i64 / weight
 pub func:calc_vruntime_delta = fix256(fix256: delta_exec, fix256: weight) {
-    fix256: nice_0 = 1024.0;
+    fix256: nice_0 = 1024.0fix256;
     // We should compute delta_exec * nice_0 / weight
     fix256: temp = delta_exec * nice_0;
     fix256: res = temp / weight;
-    pass res;
+    pass(res);
 };
 
 // calc_ideal_runtime: target_latency * (weight / total_weight)
 // But must be at least min_granularity
 pub func:calc_ideal_runtime = fix256(fix256: target_latency, fix256: min_granularity, fix256: weight, fix256: total_weight) {
-    if (total_weight == 0.0) { pass min_granularity; }
+    if (total_weight == 0.0fix256) { pass(min_granularity); }
     
     fix256: temp = target_latency * weight;
     fix256: ideal = temp / total_weight;
     
     if (ideal < min_granularity) {
-        pass min_granularity;
+        pass(min_granularity);
     }
-    pass ideal;
+    pass(ideal);
 };
 
-// calc_vruntime_bonus: Computes a vruntime deduction based on ULE interactivity score (0-100).
+// calc_vruntime_bonus: Computes a vruntime deduction based on ULE interactivity score (0i64-100i64).
 // Higher score means more interactive, leading to a larger deduction (up to target_latency).
 // This pushes the interactive task leftward in the RB-Tree.
 pub func:calc_vruntime_bonus = fix256(int32: ule_score, fix256: target_latency) {
-    if (ule_score <= 0) {
-        fix256: zero = 0.0;
-        pass zero;
+    if (ule_score <= 0i64) {
+        fix256: zero = 0.0fix256;
+        pass(zero);
     }
-    if (ule_score >= 100) {
-        pass target_latency;
+    if (ule_score >= 100i64) {
+        pass(target_latency);
     }
     
-    // Scale target_latency by (ule_score / 100.0)
-    fix256: u_score = 0.0;
+    // Scale target_latency by (ule_score / 100.0fix256)
+    fix256: u_score = 0.0fix256;
     
     // Convert int32 to fix256 manually (since we don't have int32 to fix256 builtin cast tested,
     // we can use a loop or assume the compiler handles assignment cast? Actually the compiler 
-    // crashes on implicit casts. But we can build the value manually, or just use 100.0 directly 
+    // crashes on implicit casts. But we can build the value manually, or just use 100.0fix256 directly 
     // and do it if we know the score. Wait, there is no generic cast to fix256.
     // Let's use a switch/if-else for common values or just write an asm helper if needed.
-    // But since ULE score is an integer 0-100, we can calculate (target_latency * ule_score) / 100.0
+    // But since ULE score is an integer 0i64-100i64, we can calculate (target_latency * ule_score) / 100.0fix256
     // using fix256. But wait, how do we convert `ule_score` to `fix256`?
     // Let's implement a manual conversion loop to build the fix256 value.
     
     int32: rem = ule_score;
-    if (rem >= 64) { u_score = u_score + 64.0; rem = rem - 64; }
-    if (rem >= 32) { u_score = u_score + 32.0; rem = rem - 32; }
-    if (rem >= 16) { u_score = u_score + 16.0; rem = rem - 16; }
-    if (rem >= 8)  { u_score = u_score + 8.0;  rem = rem - 8; }
-    if (rem >= 4)  { u_score = u_score + 4.0;  rem = rem - 4; }
-    if (rem >= 2)  { u_score = u_score + 2.0;  rem = rem - 2; }
-    if (rem >= 1)  { u_score = u_score + 1.0;  rem = rem - 1; }
+    if (rem >= 64i64) { u_score = u_score + 64.0fix256; rem = rem - 64i64; }
+    if (rem >= 32i64) { u_score = u_score + 32.0fix256; rem = rem - 32i64; }
+    if (rem >= 16i64) { u_score = u_score + 16.0fix256; rem = rem - 16i64; }
+    if (rem >= 8i64)  { u_score = u_score + 8.0fix256;  rem = rem - 8i64; }
+    if (rem >= 4i64)  { u_score = u_score + 4.0fix256;  rem = rem - 4i64; }
+    if (rem >= 2i64)  { u_score = u_score + 2.0fix256;  rem = rem - 2i64; }
+    if (rem >= 1i64)  { u_score = u_score + 1.0fix256;  rem = rem - 1i64; }
     
     fix256: temp = target_latency * u_score;
-    fix256: hundred = 100.0;
+    fix256: hundred = 100.0fix256;
     fix256: bonus = temp / hundred;
-    pass bonus;
+    pass(bonus);
 };

@@ -1,0 +1,13 @@
+pub struct:PidMapSlot = { int64: pid; bool: occupied; };
+pub struct:PidMap = { PidMapSlot->: slots; };
+pub func:main = int32() {
+    PidMap: map;
+    map.slots = calloc(10i64, 16i64) => PidMapSlot->;
+    map.slots[0i64].occupied = true;
+    
+    int64: h = 0i64;
+    bool: occ = map.slots[h].occupied;
+    if (occ) { exit 10i64; }
+    exit 0i64;
+};
+pub func:failsafe = int32(tbb32:err) { exit 99i64; };

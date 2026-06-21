@@ -1,0 +1,10 @@
+pub func:read_int64 = int64(any->: ptr) {
+    pass asm!!!<int64>("x86_64", "movq ($1), $0", "=r,r", ptr);
+};
+pub func:main = int32() {
+    int64: val = 42i64;
+    int64: out = raw read_int64(@val => any->);
+    if (out != 42i64) { exit 1i64; }
+    exit 0i64;
+};
+pub func:failsafe = int32(tbb32:err) { exit 99i64; };

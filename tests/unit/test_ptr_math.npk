@@ -1,0 +1,20 @@
+pub func:ptr_add = int64(any->: base, int64: offset) {
+    pass asm!!!<int64>("x86_64", "movq $1, $0\naddq $2, $0", "=r,r,r", base, offset);
+};
+pub func:read_int64 = int64(int64: ptr) {
+    pass asm!!!<int64>("x86_64", "movq ($1), $0", "=r,r", ptr);
+};
+pub struct:ArenaSlot = { int64: item; int64: next_free; };
+pub func:main = int32() {
+    ArenaSlot->: slots = calloc(10i64, 16i64) => ArenaSlot->;
+    slots[2i64].next_free = 42i64;
+    int64: idx = 2i64;
+    
+    int64: total_offset = (idx * 16i64) + 8i64;
+    int64: ptr = raw ptr_add(slots => any->, total_offset);
+    
+    int64: out = raw read_int64(ptr);
+    exit out => int32;
+    exit 0i64;
+};
+pub func:failsafe = int32(tbb32:err) { exit 99i64; };

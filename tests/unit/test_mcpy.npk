@@ -1,0 +1,7 @@
+pub func:ptr_add = any->(any->: base, int64: offset) {
+    int64: res = asm!!!<int64>("x86_64", "movq $1, $0\naddq $2, $0", "=r,r,r", base, offset);
+    any->: ptr;
+    // this fails to compile, so let's just use int64!
+    // wait! mcpy takes wild int8->!
+    pass(res => any->); // wait, I can just not use it
+};

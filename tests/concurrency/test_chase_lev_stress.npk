@@ -8,27 +8,27 @@ extern "npk_runtime" {
 }
 
 pub func:thread_worker = NIL(int64: env, int64: arg) {
-    int64: deque = raw read_int64(arg + 0);
-    int64: stop_flag = raw read_int64(arg + 8);
-    int64: count_ptr = raw read_int64(arg + 16);
-    int64: results_ptr = raw read_int64(arg + 24);
+    int64: deque = raw read_int64(arg + 0i64);
+    int64: stop_flag = raw read_int64(arg + 8i64);
+    int64: count_ptr = raw read_int64(arg + 16i64);
+    int64: results_ptr = raw read_int64(arg + 24i64);
     
     bool: running = true;
     while (running) {
         int32: task = raw chase_lev_steal(deque);
-        if (task >= 0) {
+        if (task >= 0i64) {
             int64: t64 = raw int32_to_int64(task);
-            int64: r_ptr = results_ptr + (t64 * 8);
+            int64: r_ptr = results_ptr + (t64 * 8i64);
             
             // Increment duplicate tracker
-            drop raw atomic_fetch_add_int64(r_ptr, 1);
+            drop raw atomic_fetch_add_int64(r_ptr, 1i64);
             
             // Increment total stolen count
-            drop raw atomic_fetch_add_int64(count_ptr, 1);
+            drop raw atomic_fetch_add_int64(count_ptr, 1i64);
         } else {
             int64: s = raw read_int64(stop_flag);
-            if (s == 1) {
-                // Wait! To make absolutely sure the queue is empty, we must steal and get -1 AFTER the stop_flag is 1.
+            if (s == 1i64) {
+                // Wait! To make absolutely sure the queue is empty, we must steal and get -1i64 AFTER the stop_flag is 1i64.
                 // Which we just did!
                 running = false;
             } else {
@@ -36,27 +36,27 @@ pub func:thread_worker = NIL(int64: env, int64: arg) {
             }
         }
     }
-    pass NIL;
+    pass(NIL);
 };
 
 pub func:proc_exit = int32(int32: code) {
     int32: dummy = asm!!!<int32>("x86_64", "movl $1, %edi; movl $$60, %eax; syscall", "=r,r", code);
-    pass 0;
+    pass(0i64);
 };
 
 pub func:main = int32() {
     int64: deque = raw chase_lev_init();
-    if (deque == 0) { exit 1; }
+    if (deque == 0i64) { exit 1i64; }
     
-    int64: data_ptr = raw ptr_to_int(calloc(1, 32) => any->);
-    int64: results_ptr = raw ptr_to_int(calloc(10000, 8) => any->);
-    int64: count_ptr = raw ptr_to_int(calloc(1, 8) => any->);
-    int64: stop_flag = raw ptr_to_int(calloc(1, 8) => any->);
+    int64: data_ptr = raw ptr_to_int(calloc(1i64, 32i64) => any->);
+    int64: results_ptr = raw ptr_to_int(calloc(10000i64, 8i64) => any->);
+    int64: count_ptr = raw ptr_to_int(calloc(1i64, 8i64) => any->);
+    int64: stop_flag = raw ptr_to_int(calloc(1i64, 8i64) => any->);
     
-    drop raw write_int64(data_ptr + 0, deque);
-    drop raw write_int64(data_ptr + 8, stop_flag);
-    drop raw write_int64(data_ptr + 16, count_ptr);
-    drop raw write_int64(data_ptr + 24, results_ptr);
+    drop raw write_int64(data_ptr + 0i64, deque);
+    drop raw write_int64(data_ptr + 8i64, stop_flag);
+    drop raw write_int64(data_ptr + 16i64, count_ptr);
+    drop raw write_int64(data_ptr + 24i64, results_ptr);
     
     int64: fn_addr = asm!!!<int64>("x86_64", "leaq thread_worker(%rip), $0", "=r");
     
@@ -69,8 +69,8 @@ pub func:main = int32() {
     int64: t6 = npk_shim_thread_spawn(fn_addr, data_ptr);
     int64: t7 = npk_shim_thread_spawn(fn_addr, data_ptr);
     
-    int32: i = 0;
-    while (i < 10000) {
+    int32: i = 0i64;
+    while (i < 10000i64) {
         bool: p = false;
         while (!p) {
             p = raw chase_lev_push(deque, i);
@@ -78,10 +78,10 @@ pub func:main = int32() {
                 drop npk_shim_thread_yield();
             }
         }
-        i = i + 1;
+        i = i + 1i64;
     }
     
-    drop raw write_int64(stop_flag, 1);
+    drop raw write_int64(stop_flag, 1i64);
     
     drop npk_shim_thread_join(t0);
     drop npk_shim_thread_join(t1);
@@ -93,20 +93,20 @@ pub func:main = int32() {
     drop npk_shim_thread_join(t7);
     
     int64: total_stolen = raw read_int64(count_ptr);
-    if (total_stolen != 10000) {
-        exit 2;
+    if (total_stolen != 10000i64) {
+        exit 2i64;
     }
     
-    int64: j = 0;
-    while (j < 10000) {
-        int64: r = raw read_int64(results_ptr + (j * 8));
-        if (r != 1) {
-            exit 3;
+    int64: j = 0i64;
+    while (j < 10000i64) {
+        int64: r = raw read_int64(results_ptr + (j * 8i64));
+        if (r != 1i64) {
+            exit 3i64;
         }
-        j = j + 1;
+        j = j + 1i64;
     }
     
-    exit 0;
+    exit 0i64;
 };
 
-func:failsafe = int32(tbb32:err) { exit 99; };
+func:failsafe = int32(tbb32:err) { exit 99i64; };

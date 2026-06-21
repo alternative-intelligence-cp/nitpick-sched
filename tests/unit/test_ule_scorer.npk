@@ -2,35 +2,35 @@ use "../../src/fairness/ule_scorer.npk".*;
 
 pub func:proc_exit = int32(int32: code) {
     int32: dummy = asm!!!<int32>("x86_64", "movl $1, %edi; movl $$60, %eax; syscall", "=r,r", code);
-    pass 0;
+    pass(0i64);
 };
 
 pub func:main = int32() {
-    // 1. Extreme edge cases
+    // 1i64. Extreme edge cases
     // Both zero
-    int32: s1 = raw calculate_interactivity(0, 0);
-    if (s1 != 0) { exit 1; }
+    int32: s1 = raw calculate_interactivity(0i64, 0i64);
+    if (s1 != 0i64) { exit 1i64; }
     
-    // 0 run time, some sleep time (maximum interactivity)
-    int32: s2 = raw calculate_interactivity(500, 0);
-    if (s2 != 100) { exit 2; }
+    // 0i64 run time, some sleep time (maximum interactivity)
+    int32: s2 = raw calculate_interactivity(500i64, 0i64);
+    if (s2 != 100i64) { exit 2i64; }
     
-    // 0 sleep time, some run time (minimum interactivity)
-    int32: s3 = raw calculate_interactivity(0, 500);
-    if (s3 != 0) { exit 3; }
+    // 0i64 sleep time, some run time (minimum interactivity)
+    int32: s3 = raw calculate_interactivity(0i64, 500i64);
+    if (s3 != 0i64) { exit 3i64; }
     
-    // 2. Normal cases
-    // 50% sleep time, 50% run time -> 50 score
-    int32: s4 = raw calculate_interactivity(200, 200);
-    if (s4 != 50) { exit 4; }
+    // 2i64. Normal cases
+    // 50i64% sleep time, 50i64% run time -> 50i64 score
+    int32: s4 = raw calculate_interactivity(200i64, 200i64);
+    if (s4 != 50i64) { exit 4i64; }
     
-    // 75% sleep time -> 75 score
-    int32: s5 = raw calculate_interactivity(300, 100);
-    if (s5 != 75) { exit 5; }
+    // 75i64% sleep time -> 75i64 score
+    int32: s5 = raw calculate_interactivity(300i64, 100i64);
+    if (s5 != 75i64) { exit 5i64; }
     
-    exit 0;
+    exit 0i64;
 };
 
 func:failsafe = int32(tbb32:err) {
-    exit 99;
+    exit 99i64;
 };

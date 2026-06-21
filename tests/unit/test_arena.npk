@@ -4,28 +4,28 @@ use "../../src/structs/tcb.npk".TCB;
 
 func:main = int32() {
     TCBArena: arena;
-    arena.capacity = 1024;
+    arena.capacity = 1024i64;
     drop arena_init(@arena);
     
     IdxHandle<TCB>: h1 = raw tcb_arena_allocate(@arena);
-    if (h1.index == -1) { exit 1; }
+    if (h1.index == -1i64) { exit 1i64; }
     
     Result<TCB->>: r1 = tcb_arena_get(@arena, h1);
     if (r1.is_error) { exit r1.error => int32; }
     TCB->: t1 = r1.value;
     
-    t1->pid = 42;
+    t1->pid = 42i64;
     
     bool: freed = raw tcb_arena_release(@arena, h1);
-    if (!freed) { exit 3; }
+    if (!freed) { exit 3i64; }
     
     // Test invalidation
     Result<TCB->>: r2 = tcb_arena_get(@arena, h1);
-    if (!r2.is_error) { exit 4; }
+    if (!r2.is_error) { exit 4i64; }
     
-    exit 0;
+    exit 0i64;
 };
 
 func:failsafe = int32(tbb32:err) {
-    exit 1;
+    exit 1i64;
 };

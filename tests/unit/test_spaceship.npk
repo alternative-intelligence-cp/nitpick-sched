@@ -1,0 +1,25 @@
+pub func:proc_exit = int32(int32: code) {
+    int32: dummy = asm!!!<int32>("x86_64", "movl $1, %edi; movl $$60, %eax; syscall", "=r,r", code);
+    pass(0i64);
+};
+pub func:main = int32() {
+    int32: a = 10i64;
+    int32: b = 20i64;
+    int32: c = a <=> b;
+    if (c != -1i64) { exit 1i64; }
+    
+    a = 20i64;
+    b = 10i64;
+    c = a <=> b;
+    if (c != 1i64) { exit 2i64; }
+    
+    a = 15i64;
+    b = 15i64;
+    c = a <=> b;
+    if (c != 0i64) { exit 3i64; }
+    
+    exit 0i64;
+};
+func:failsafe = int32(tbb32:err) {
+    exit 99i64;
+};

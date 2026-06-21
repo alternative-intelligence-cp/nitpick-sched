@@ -1,0 +1,118 @@
+use "../../src/structs/queue.npk".{TCBQueue, queue_init, queue_enqueue2, queue_dequeue, queue_remove};
+use "../../src/structs/arena.npk".{TCBArena, arena_init, tcb_arena_allocate, tcb_arena_get};
+use "../../src/structs/handle.npk".IdxHandle;
+use "../../src/structs/tcb.npk".TCB;
+
+pub func:main = int32() {
+    TCBArena: arena;
+    arena.capacity = 1024i64;
+    Result<NIL>: r_arena = arena_init(@arena);
+    if (r_arena.is_error) { exit 99i64; }
+
+    TCBQueue: q;
+    q.count = 0i64;
+    Result<NIL>: r_queue = queue_init(@q);
+    if (r_queue.is_error) { exit 99i64; }
+
+    Result<IdxHandle<TCB> >: rh1 = tcb_arena_allocate(@arena);
+    if (rh1.is_error) { exit 100i64; }
+    IdxHandle<TCB>: h1 = rh1.value;
+
+    Result<IdxHandle<TCB> >: rh2 = tcb_arena_allocate(@arena);
+    if (rh2.is_error) { exit 100i64; }
+    IdxHandle<TCB>: h2 = rh2.value;
+
+    Result<IdxHandle<TCB> >: rh3 = tcb_arena_allocate(@arena);
+    if (rh3.is_error) { exit 100i64; }
+    IdxHandle<TCB>: h3 = rh3.value;
+
+    if (h1.index == -1i64) { exit arena.first_free => int32; }
+    if (h2.index == -1i64) { exit 2i64; }
+    if (h3.index == -1i64) { exit 3i64; }
+
+    Result<IdxHandle<TCB> >: rok1 = queue_enqueue2(@q, @arena, h1);
+    if (rok1.is_error) { exit 100i64; }
+    IdxHandle<TCB>: ok1 = rok1.value;
+    if (ok1.index == -1i64) { exit 101i64; }
+
+    Result<IdxHandle<TCB> >: rok2 = queue_enqueue2(@q, @arena, h2);
+    if (rok2.is_error) { exit 100i64; }
+    IdxHandle<TCB>: ok2 = rok2.value;
+    if (ok2.index == -1i64) { exit 102i64; }
+
+    Result<IdxHandle<TCB> >: rok3 = queue_enqueue2(@q, @arena, h3);
+    if (rok3.is_error) { exit 100i64; }
+    IdxHandle<TCB>: ok3 = rok3.value;
+    if (ok3.index == -1i64) { exit 103i64; }
+
+    if (q.count != 3i64) { exit 7i64; }
+    if (q.head.index != h1.index) { exit 8i64; }
+    if (q.tail.index != h3.index) { exit 9i64; }
+
+    Result<TCB->>: rt1 = tcb_arena_get(@arena, h1);
+    if (rt1.is_error) { exit 100i64; }
+    TCB->: t1 = rt1.value;
+
+    Result<TCB->>: rt2 = tcb_arena_get(@arena, h2);
+    if (rt2.is_error) { exit 100i64; }
+    TCB->: t2 = rt2.value;
+
+    Result<TCB->>: rt3 = tcb_arena_get(@arena, h3);
+    if (rt3.is_error) { exit 100i64; }
+    TCB->: t3 = rt3.value;
+
+    if (t1->prev.index != -1i64) { exit 10i64; }
+    if (t1->next.index != h2.index) { exit 11i64; }
+
+    if (t2->prev.index != h1.index) { exit 12i64; }
+    if (t2->next.index != h3.index) { exit 13i64; }
+
+    if (t3->prev.index != h2.index) { exit 14i64; }
+    if (t3->next.index != -1i64) { exit 15i64; }
+
+    Result<IdxHandle<TCB> >: rrm1 = queue_remove(@q, @arena, h2);
+    if (rrm1.is_error) { exit 100i64; }
+    IdxHandle<TCB>: rm1 = rrm1.value;
+    if (rm1.index == -1i64) { exit 112i64; }
+    if (q.count != 2i64) { exit 17i64; }
+
+    Result<TCB->>: rt1_new = tcb_arena_get(@arena, h1);
+    if (rt1_new.is_error) { exit 100i64; }
+    TCB->: t1_new = rt1_new.value;
+
+    Result<TCB->>: rt2_new = tcb_arena_get(@arena, h2);
+    if (rt2_new.is_error) { exit 100i64; }
+    TCB->: t2_new = rt2_new.value;
+
+    Result<TCB->>: rt3_new = tcb_arena_get(@arena, h3);
+    if (rt3_new.is_error) { exit 100i64; }
+    TCB->: t3_new = rt3_new.value;
+
+    if (t1_new->next.index != h3.index) { exit 18i64; }
+    if (t3_new->prev.index != h1.index) { exit 19i64; }
+    if (t2_new->next.index != -1i64) { exit 20i64; }
+    if (t2_new->prev.index != -1i64) { exit 21i64; }
+
+    Result<IdxHandle<TCB> >: rdh1 = queue_dequeue(@q, @arena);
+    if (rdh1.is_error) { exit 100i64; }
+    IdxHandle<TCB>: dh1 = rdh1.value;
+    if (dh1.index != h1.index) { exit 21i64; }
+    if (q.count != 1i64) { exit 22i64; }
+
+    Result<IdxHandle<TCB> >: rdh2 = queue_dequeue(@q, @arena);
+    if (rdh2.is_error) { exit 100i64; }
+    IdxHandle<TCB>: dh2 = rdh2.value;
+    if (dh2.index != h3.index) { exit 23i64; }
+    if (q.count != 0i64) { exit 24i64; }
+
+    Result<IdxHandle<TCB> >: rdh3 = queue_dequeue(@q, @arena);
+    if (rdh3.is_error) { exit 100i64; }
+    IdxHandle<TCB>: dh3 = rdh3.value;
+    if (dh3.index != -1i64) { exit 25i64; }
+
+    exit 0i64;
+};
+
+func:failsafe = int32(tbb32:err) {
+    exit 1i64;
+};

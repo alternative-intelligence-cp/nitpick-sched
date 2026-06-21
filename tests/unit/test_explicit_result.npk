@@ -1,0 +1,1 @@
+use "../../src/structs/tcb.npk".{TCB}; pub func:failsafe = int32(tbb32:err) { exit 1i64; }; pub func:foo = Result<int32>() { Result<int32>: res; res.value = 115i64; res.is_error = false; res.error = 0i64; pass(res); }; pub func:main = int32() { Result<int32>: r = foo(); if (r.value == 115i64) { exit 42i64; } exit 1i64; };

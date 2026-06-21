@@ -1,0 +1,2 @@
+use "../structs/memory_helpers.npk".*;
+pub func:chase_lev_size = int64(int64: deque) ensures result >= 0 && result <= 128 { pass 0; };

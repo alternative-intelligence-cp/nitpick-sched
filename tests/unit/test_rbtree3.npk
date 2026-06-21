@@ -3,27 +3,27 @@ use "../../src/structs/memory_helpers.npk".*;
 
 pub func:proc_exit = int32(int32: code) {
     int32: dummy = asm!!!<int32>("x86_64", "movl $1, %edi; movl $$60, %eax; syscall", "=r,r", code);
-    pass 0;
+    pass(0i64);
 };
 
 pub func:main = int32() {
-    RBTree->: tree = raw rbt_init(128);
+    RBTree->: tree = raw rbt_init(128i64);
     
     int32: n1 = raw rbt_alloc(tree);
-    drop set_vruntime(tree, n1, 500);
-    drop set_pid(tree, n1, 10);
-    drop set_tcb(tree, n1, 100);
+    drop set_vruntime(tree, n1, 500i64);
+    drop set_pid(tree, n1, 10i64);
+    drop set_tcb(tree, n1, 100i64);
     
     drop set_root(tree, n1);
     
     int32: root = raw get_root(tree);
-    if (root == -1) { exit 104; }
+    if (root == -1i64) { exit 104i64; }
     
-    drop set_color(tree, root, 0);
+    drop set_color(tree, root, 0i64);
     
-    exit 200;
+    exit 200i64;
 };
 
 func:failsafe = int32(tbb32:err) {
-    exit 99;
+    exit 99i64;
 };

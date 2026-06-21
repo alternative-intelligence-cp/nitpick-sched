@@ -3,16 +3,16 @@ use "../../tests/utils.npk".{MockClock, clock_advance};
 
 func:main = int32() {
     MockClock: clock;
-    clock.current_time = 0 => fix256;
+    clock.current_time = 0i64 => fix256;
     
-    fix256: step = 100 => fix256;
+    fix256: step = 100i64 => fix256;
     drop clock_advance(@clock, step);
     
     // Check removed to avoid npkc compiler bug with fix256 comparison
     
-    exit 0;
+    exit 0i64;
 };
 
 func:failsafe = int32(tbb32:err) {
-    exit 1;
+    exit 1i64;
 };

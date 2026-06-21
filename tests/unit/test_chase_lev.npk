@@ -6,73 +6,73 @@ use "../../src/structs/memory_helpers.npk".*;
 
 pub func:proc_exit = int32(int32: code) {
     int32: dummy = asm!!!<int32>("x86_64", "movl $1, %edi; movl $$60, %eax; syscall", "=r,r", code);
-    pass 0;
+    pass(0i64);
 };
 
 pub func:main = int32() {
     int64: deque = raw chase_lev_init();
-    if (deque == 0) { exit 1; }
+    if (deque == 0i64) { exit 1i64; }
     
     // Pop empty
     int32: e = raw chase_lev_pop(deque);
-    if (e != -1) { exit 2; }
+    if (e != -1i64) { exit 2i64; }
     
     // Steal empty
     int32: e_steal = raw chase_lev_steal(deque);
-    if (e_steal != -1) { exit 3; }
+    if (e_steal != -1i64) { exit 3i64; }
     
     // Push one
-    bool: success_1 = raw chase_lev_push(deque, 42);
-    if (!success_1) { exit 4; }
+    bool: success_1 = raw chase_lev_push(deque, 42i64);
+    if (!success_1) { exit 4i64; }
     
     // Steal one
     int32: r1 = raw chase_lev_steal(deque);
-    if (r1 != 42) { exit 5; }
+    if (r1 != 42i64) { exit 5i64; }
     
     // Steal empty again
     int32: e2 = raw chase_lev_steal(deque);
-    if (e2 != -1) { exit 6; }
+    if (e2 != -1i64) { exit 6i64; }
     
     // Push multiple
-    int32: i = 0;
-    while (i < 128) {
-        bool: success_multi = raw chase_lev_push(deque, i + 100);
-        if (!success_multi) { exit 7; }
-        i = i + 1;
+    int32: i = 0i64;
+    while (i < 128i64) {
+        bool: success_multi = raw chase_lev_push(deque, i + 100i64);
+        if (!success_multi) { exit 7i64; }
+        i = i + 1i64;
     }
     
     // Push full
-    bool: full = raw chase_lev_push(deque, 999);
-    if (full) { exit 8; }
+    bool: full = raw chase_lev_push(deque, 999i64);
+    if (full) { exit 8i64; }
     
     // Steal one from bottom (wait, steal takes from top!)
-    // Top was 1, because we pushed 42 and stole it. 
-    // Wait, the first push (42) put it at index 0. Then steal took it, moving top to 1.
-    // Then we pushed 128 items (indexes 1 to 128). 
-    // The items are 100, 101, ..., 227.
-    // Steal should take from top (index 1), which has item 100.
+    // Top was 1i64, because we pushed 42i64 and stole it. 
+    // Wait, the first push (42i64) put it at index 0i64. Then steal took it, moving top to 1i64.
+    // Then we pushed 128i64 items (indexes 1i64 to 128i64). 
+    // The items are 100i64, 101i64, ..., 227i64.
+    // Steal should take from top (index 1i64), which has item 100i64.
     int32: r2 = raw chase_lev_steal(deque);
-    if (r2 != 100) { exit 9; }
+    if (r2 != 100i64) { exit 9i64; }
     
-    // Pop one from bottom (index 128)
+    // Pop one from bottom (index 128i64)
     int32: r3 = raw chase_lev_pop(deque);
-    if (r3 != 227) { exit 10; }
+    if (r3 != 227i64) { exit 10i64; }
     
     // Pop rest
-    int32: j = 126;
-    while (j >= 1) {
+    int32: j = 126i64;
+    while (j >= 1i64) {
         int32: p = raw chase_lev_pop(deque);
-        if (p != j + 100) { exit 11; }
-        j = j - 1;
+        if (p != j + 100i64) { exit 11i64; }
+        j = j - 1i64;
     }
     
     // Steal should be empty now
     int32: e3 = raw chase_lev_steal(deque);
-    if (e3 != -1) { exit 12; }
+    if (e3 != -1i64) { exit 12i64; }
     
-    exit 0;
+    exit 0i64;
 };
 
 func:failsafe = int32(tbb32:err) {
-    exit 99;
+    exit 99i64;
 };

@@ -10,103 +10,103 @@ pub struct:ChaseLev = {
 
 func:npk_shim_atomic_thread_fence = NIL(int32:order);
 
-// 128 elements max. Each element is an int32 TCB Handle.
-// size = 16 bytes for top/bottom + 128 * 4 bytes = 528 bytes.
+// 128i64 elements max. Each element is an int32 TCB Handle.
+// size = 16i64 bytes for top/bottom + 128i64 * 4i64 bytes = 528i64 bytes.
 pub func:chase_lev_init = int64() {
-    int64: ptr = raw ptr_to_int(calloc(1, 528) => any->);
-    pass ptr;
+    int64: ptr = raw ptr_to_int(calloc(1i64, 528i64) => any->);
+    pass(ptr);
 };
 
 // Z3 verification helper to strictly enforce the ring buffer capacity boundaries
-pub func:chase_lev_size = int64(int64: deque) ensures result >= 0 && result <= 128 {
-    if (deque == 0) { pass 0; }
-    int64: t = raw read_int64(deque + 0);
-    int64: b = raw read_int64(deque + 8);
+pub func:chase_lev_size = int64(int64: deque) ensures result >= 0i64 && result <= 128i64 {
+    if (deque == 0i64) { pass(0i64); }
+    int64: t = raw read_int64(deque + 0i64);
+    int64: b = raw read_int64(deque + 8i64);
     int64: sz = b - t;
-    if (sz < 0) { pass 0; }
-    if (sz > 128) { pass 128; }
-    pass sz;
+    if (sz < 0i64) { pass(0i64); }
+    if (sz > 128i64) { pass(128i64); }
+    pass(sz);
 };
 
 // Returns false if full, true if pushed
 pub func:chase_lev_push = bool(int64: deque, int32: task_handle) {
-    if (deque == 0) { pass false; }
+    if (deque == 0i64) { pass(false); }
     
-    int64: top = raw read_int64(deque + 0);
-    int64: bottom = raw read_int64(deque + 8);
+    int64: top = raw read_int64(deque + 0i64);
+    int64: bottom = raw read_int64(deque + 8i64);
     
     int64: size = bottom - top;
-    if (size >= 128) { pass false; }
+    if (size >= 128i64) { pass(false); }
     
-    int64: idx = bottom % 128;
-    int64: item_ptr = deque + 16 + (idx * 4);
+    int64: idx = bottom % 128i64;
+    int64: item_ptr = deque + 16i64 + (idx * 4i64);
     
     // memory_order_release write
     drop write_int32(item_ptr, task_handle);
-    drop npk_shim_atomic_thread_fence(3); // memory_order_release
-    drop write_int64(deque + 8, bottom + 1);
+    drop npk_shim_atomic_thread_fence(3i64); // memory_order_release
+    drop write_int64(deque + 8i64, bottom + 1i64);
     
-    pass true;
+    pass(true);
 };
 
-// Returns -1 if empty, or task handle
+// Returns -1i64 if empty, or task handle
 pub func:chase_lev_pop = int32(int64: deque) {
-    if (deque == 0) { pass -1; }
+    if (deque == 0i64) { pass(-1i64); }
     
-    int64: bottom = raw read_int64(deque + 8) - 1;
-    drop write_int64(deque + 8, bottom);
+    int64: bottom = raw read_int64(deque + 8i64) - 1i64;
+    drop write_int64(deque + 8i64, bottom);
     
-    drop npk_shim_atomic_thread_fence(5); // memory_order_seq_cst
+    drop npk_shim_atomic_thread_fence(5i64); // memory_order_seq_cst
     
-    int64: top = raw read_int64(deque + 0);
+    int64: top = raw read_int64(deque + 0i64);
     
     if (top <= bottom) {
-        int64: idx = bottom % 128;
-        int64: item_ptr = deque + 16 + (idx * 4);
+        int64: idx = bottom % 128i64;
+        int64: item_ptr = deque + 16i64 + (idx * 4i64);
         int32: task = raw read_int32(item_ptr);
         
         if (top != bottom) {
-            pass task;
+            pass(task);
         }
         
         // Single element left, structurally requires CAS in concurrent case
-        bool: success = raw cmpxchg_int64(deque + 0, top, top + 1);
-        drop write_int64(deque + 8, top + 1);
+        bool: success = raw cmpxchg_int64(deque + 0i64, top, top + 1i64);
+        drop write_int64(deque + 8i64, top + 1i64);
         
         if (success) {
-            pass task;
+            pass(task);
         }
-        pass -1;
+        pass(-1i64);
     } else {
-        drop write_int64(deque + 8, top);
-        pass -1;
+        drop write_int64(deque + 8i64, top);
+        pass(-1i64);
     }
 };
 
-// Returns -1 if empty, or task handle. Safe for concurrent thieves.
+// Returns -1i64 if empty, or task handle. Safe for concurrent thieves.
 pub func:chase_lev_steal = int32(int64: deque) {
-    if (deque == 0) { pass -1; }
+    if (deque == 0i64) { pass(-1i64); }
     
     bool: running = true;
-    int32: stolen_task = -1;
+    int32: stolen_task = -1i64;
     
     while (running) {
-        int64: t = raw read_int64(deque + 0);
-        drop npk_shim_atomic_thread_fence(5); // memory_order_seq_cst
-        int64: b = raw read_int64(deque + 8);
+        int64: t = raw read_int64(deque + 0i64);
+        drop npk_shim_atomic_thread_fence(5i64); // memory_order_seq_cst
+        int64: b = raw read_int64(deque + 8i64);
         
         int64: size = b - t;
-        if (size <= 0) {
+        if (size <= 0i64) {
             // Empty
             running = false;
         } else {
             // Read task from queue
-            int64: idx = t % 128;
-            int64: item_ptr = deque + 16 + (idx * 4);
+            int64: idx = t % 128i64;
+            int64: item_ptr = deque + 16i64 + (idx * 4i64);
             int32: task = raw read_int32(item_ptr);
             
             // Now attempt CAS to increment top
-            bool: success = raw cmpxchg_int64(deque + 0, t, t + 1);
+            bool: success = raw cmpxchg_int64(deque + 0i64, t, t + 1i64);
             if (success) {
                 stolen_task = task;
                 running = false;
@@ -114,5 +114,5 @@ pub func:chase_lev_steal = int32(int64: deque) {
         }
     }
     
-    pass stolen_task;
+    pass(stolen_task);
 };

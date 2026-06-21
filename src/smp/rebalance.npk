@@ -5,39 +5,39 @@ use "../structs/memory_helpers.npk".*;
 // Returns the number of tasks successfully stolen and pushed.
 pub func:rebalance_steal_half = int32(int64: src_deque, int64: dst_deque) {
     bool: running = true;
-    int32: stolen_count = 0;
+    int32: stolen_count = 0i32;
     
     // Scratchpad to hold the stolen tasks
     astack(64i64);
     
     while (running) {
-        int64: t = raw read_int64(src_deque + 0);
-        drop npk_shim_atomic_thread_fence(5); // memory_order_seq_cst
-        int64: b = raw read_int64(src_deque + 8);
+        int64: t = raw read_int64(src_deque + 0i64);
+        drop npk_shim_atomic_thread_fence(5i32); // memory_order_seq_cst
+        int64: b = raw read_int64(src_deque + 8i64);
         
         int64: size = b - t;
-        if (size <= 1) {
-            // Nothing to steal, or only 1 item
+        if (size <= 1i64) {
+            // Nothing to steal, or only 1i64 item
             running = false;
         } else {
-            int64: n64 = size / 2;
-            if (n64 > 64) {
-                n64 = 64; // Max half of 128 is 64
+            int64: n64 = size / 2i64;
+            if (n64 > 64i64) {
+                n64 = 64i64; // Max half of 128i64 is 64i64
             }
             
-            // 1. Read the N items and push to astack
-            int64: i = 0;
+            // 1i64. Read the N items and push to astack
+            int64: i = 0i64;
             while (i < n64) {
                 int64: current_t = t + i;
-                int64: idx = current_t % 128;
-                int64: item_ptr = src_deque + 16 + (idx * 4);
+                int64: idx = current_t % 128i64;
+                int64: item_ptr = src_deque + 16i64 + (idx * 4i64);
                 int32: task = raw read_int32(item_ptr);
                 apush(task);
-                i = i + 1;
+                i = i + 1i64;
             }
             
-            // 2. Try to commit the steal by advancing top by N
-            bool: success = raw cmpxchg_int64(src_deque + 0, t, t + n64);
+            // 2i64. Try to commit the steal by advancing top by N
+            bool: success = raw cmpxchg_int64(src_deque + 0i64, t, t + n64);
             if (success) {
                 // Successfully stole N items
                 stolen_count = raw int64_to_int32(n64);
@@ -45,18 +45,18 @@ pub func:rebalance_steal_half = int32(int64: src_deque, int64: dst_deque) {
             } else {
                 // Failed to steal, CAS failed. We must pop the items we just pushed
                 // to reset the astack for the next attempt.
-                int64: k = 0;
+                int64: k = 0i64;
                 while (k < n64) {
                     int32: discard = apop();
-                    k = k + 1;
+                    k = k + 1i64;
                 }
             }
         }
     }
     
     // Now push them into the dst_deque
-    if (stolen_count > 0) {
-        int32: j = 0;
+    if (stolen_count > 0i32) {
+        int32: j = 0i32;
         while (j < stolen_count) {
             int32: task = apop();
             
@@ -68,9 +68,9 @@ pub func:rebalance_steal_half = int32(int64: src_deque, int64: dst_deque) {
                     // spin
                 }
             }
-            j = j + 1;
+            j = j + 1i64;
         }
     }
     
-    pass stolen_count;
+    pass(stolen_count);
 };

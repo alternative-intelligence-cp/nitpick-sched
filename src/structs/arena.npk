@@ -17,72 +17,72 @@ pub struct:TCBArena = {
 };
 
 pub func:arena_init = NIL(TCBArena->:arena) {
-    arena->capacity = 1024;
-    arena->count = 0;
-    arena->first_free = 0;
+    arena->capacity = 1024i64;
+    arena->count = 0i64;
+    arena->first_free = 0i64;
     
-    arena->slots = calloc(1024, 256) => ArenaSlot->;
+    arena->slots = calloc(1024i64, 256i64) => ArenaSlot->;
     
-    int64: i = 0;
-    while (i < 1024) {
-        arena->slots[i].generation = 1;
+    int64: i = 0i64;
+    while (i < 1024i64) {
+        arena->slots[i].generation = 1i64;
         arena->slots[i].occupied = false;
-        arena->slots[i].next_free = i + 1;
-        i = i + 1;
+        arena->slots[i].next_free = i + 1i64;
+        i = i + 1i64;
     }
-    arena->slots[1023].next_free = -1;
-    pass NIL;
+    arena->slots[1023i64].next_free = -1i64;
+    pass(NIL);
 };
 
 pub func:tcb_arena_allocate = IdxHandle<TCB>(TCBArena->:arena) {
-    if (arena->first_free == -1) {
+    if (arena->first_free == -1i64) {
         IdxHandle<TCB>: invalid;
-        invalid.index = -1;
-        invalid.generation = 0;
-        pass invalid;
+        invalid.index = -1i64;
+        invalid.generation = 0i64;
+        pass(invalid);
     }
     
     int64: idx = arena->first_free;
     arena->first_free = arena->slots[idx].next_free;
     
     arena->slots[idx].occupied = true;
-    arena->slots[idx].next_free = -1;
+    arena->slots[idx].next_free = -1i64;
     
-    arena->count = arena->count + 1;
+    arena->count = arena->count + 1i64;
     
     IdxHandle<TCB>: h;
     h.index = idx;
     h.generation = arena->slots[idx].generation;
-    pass h;
+    pass(h);
 };
 
 pub func:tcb_arena_get = TCB->(TCBArena->:arena, IdxHandle<TCB>:h) {
-    if (h.index < 0) { fail 10 => tbb32; }
-    if (h.index >= 1024) { fail 20 => tbb32; }
+    if (h.index < 0i64) { fail(10i64 => tbb32); }
+    if (h.index >= 1024i64) { fail(20i64 => tbb32); }
     if (!arena->slots[h.index].occupied) {
-        fail 30 => tbb32;
+        fail(30i64 => tbb32);
     }
     if (arena->slots[h.index].generation != h.generation) {
-        fail 40 => tbb32;
+        fail(40i64 => tbb32);
     }
-    pass @(arena->slots[h.index].item);
+    pass(@(arena->slots[h.index].item));
 };
 
 pub func:tcb_arena_release = bool(TCBArena->:arena, IdxHandle<TCB>:h) {
-    if (h.index < 0) { pass false; }
-    if (h.index >= 1024) { pass false; }
+    if (h.index < 0i64) { pass(false); }
+    if (h.index >= 1024i64) { pass(false); }
     if (!arena->slots[h.index].occupied) {
-        pass false;
+        pass(false);
     }
     if (arena->slots[h.index].generation != h.generation) {
-        pass false;
+        pass(false);
     }
     
     arena->slots[h.index].occupied = false;
-    arena->slots[h.index].generation = arena->slots[h.index].generation + 1;
+    arena->slots[h.index].generation = arena->slots[h.index].generation + 1i64;
     arena->slots[h.index].next_free = arena->first_free;
     arena->first_free = h.index;
     
-    arena->count = arena->count - 1;
-    pass true;
+    arena->count = arena->count - 1i64;
+    pass(true);
 };

@@ -15,39 +15,39 @@ pub struct:Worker = {
 // Initializes the worker topology based on hardware concurrency
 pub func:init_topology = int64() {
     int32: cores = npk_shim_thread_hardware_concurrency();
-    if (cores <= 0) {
-        cores = 1;
+    if (cores <= 0i32) {
+        cores = 1i32;
     }
     
     // allocate array of workers
     int64: num_cores = raw int32_to_int64(cores);
-    int64: worker_size = 16; // 8 bytes for deque_ptr + 8 bytes for rng_seed
-    Worker->: workers = calloc(num_cores, worker_size) => Worker->;
+    int64: worker_size = 16i64; // 8i64 bytes for deque_ptr + 8i64 bytes for rng_seed
+    wild Worker->: workers = calloc(num_cores, worker_size) => Worker->;
     int64: workers_ptr = raw ptr_to_int(workers => any->);
     
     // init them
-    int64: i = 0;
+    int64: i = 0i64;
     while (i < num_cores) {
         int64: offset = i * worker_size;
         int64: w_ptr = workers_ptr + offset;
         
-        // initialize deque_ptr to 0 (null) for now
-        raw write_int64(w_ptr, 0); 
+        // initialize deque_ptr to 0i64 (null) for now
+        raw write_int64(w_ptr, 0i64); 
         
-        int64: seed_ptr = w_ptr + 8;
-        // set random seed to (i + 1)
-        raw write_int64(seed_ptr, i + 1);
+        int64: seed_ptr = w_ptr + 8i64;
+        // set random seed to (i + 1i64)
+        raw write_int64(seed_ptr, i + 1i64);
         
-        i = i + 1;
+        i = i + 1i64;
     }
     
-    pass workers_ptr;
+    pass(workers_ptr);
 };
 
 pub func:get_core_count = int32() {
     int32: cores = npk_shim_thread_hardware_concurrency();
-    if (cores <= 0) {
-        pass 1;
+    if (cores <= 0i32) {
+        pass(1i32);
     }
-    pass cores;
+    pass(cores);
 };

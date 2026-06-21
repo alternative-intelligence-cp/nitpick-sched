@@ -1,0 +1,10 @@
+use "../../src/structs/pid_map.npk".{PidMap, pid_map_init, pid_map_insert, pid_map_lookup};
+func:main = int32() {
+    PidMap: map;
+    map.capacity = 1024i64;
+    drop pid_map_init(@map);
+    IdxHandle<TCB>: h1; h1.index = 5i64; h1.generation = 1i64;
+    int32: ok1 = raw pid_map_insert(@map, 100i64, @h1);
+    exit ok1;
+};
+func:failsafe = int32(tbb32:err) { exit 99i64; };

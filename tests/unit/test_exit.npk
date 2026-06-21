@@ -1,0 +1,8 @@
+func:main = int32() {
+    int32: z = 0i64;
+    exit z;
+};
+func:failsafe = int32(tbb32:err) {
+    int32: y = 1i64;
+    exit y;
+};

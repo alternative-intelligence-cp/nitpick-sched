@@ -1,0 +1,17 @@
+use "../../src/structs/queue.npk".{TCBQueue, queue_init};
+
+pub func:main = int32() {
+    TCBQueue: q;
+    q.count = 0i64;
+    drop queue_init(@q);
+    
+    if (q.tail.index != -1i64) { exit 102i64; }
+    if (q.head.index != -1i64) { exit 103i64; }
+    
+    
+    exit 0i64;
+};
+
+func:failsafe = int32(tbb32:err) {
+    exit 1i64;
+};

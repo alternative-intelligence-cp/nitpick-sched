@@ -1,0 +1,30 @@
+pub func:ptr_add = int64(any->: base, int64: offset) {
+    pass asm!!!<int64>("x86_64", "movq $1, $0\naddq $2, $0", "=r,r,r", base, offset);
+};
+pub func:read_bool = bool(int64: ptr) {
+    int8: b = asm!!!<int8>("x86_64", "movb ($1), $0", "=q,r", ptr);
+    if (b == 0i64) { pass(false); }
+    pass(true);
+};
+pub func:write_bool = int32(int64: ptr, bool: val) {
+    int8: b = 0i64;
+    if (val) { b = 1i64; }
+    pass asm!!!<int32>("x86_64", "movb $2, ($1)", "=r,r,q", ptr, b);
+};
+
+pub struct:ArenaSlot = { int64: item; int64: next_free; bool: occupied; };
+
+pub func:main = int32() {
+    ArenaSlot->: slots = calloc(10i64, 24i64) => ArenaSlot->;
+    int64: base = raw ptr_add(slots => any->, 0i64);
+    
+    // offset to occupied is 16i64
+    int64: p2 = base + (2i64 * 24i64) + 16i64;
+    int32: ok1 = raw write_bool(p2, true);
+    
+    bool: out = raw read_bool(p2);
+    
+    if (!out) { exit 1i64; }
+    exit 0i64;
+};
+pub func:failsafe = int32(tbb32:err) { exit 99i64; };

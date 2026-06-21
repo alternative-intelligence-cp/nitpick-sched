@@ -1,0 +1,23 @@
+pub struct:BigStruct = {
+    int64: a; int64: b; int64: c;
+};
+pub struct:Slot = {
+    BigStruct: item;
+    int64: gen;
+};
+pub struct:Arena = {
+    Slot->: slots;
+};
+pub func:main = int32() {
+    Arena: arena;
+    arena.slots = calloc(10i64, 32i64) => Slot->;
+
+    Slot->: s = @(arena.slots[5i64]);
+    BigStruct->: ptr = s => BigStruct->;
+    
+    if (ptr == NULL) { exit 1i64; }
+    ptr->a = 42i64;
+    if (arena.slots[5i64].item.a != 42i64) { exit 2i64; }
+    exit 0i64;
+};
+pub func:failsafe = int32(tbb32:err) { exit 99i64; };

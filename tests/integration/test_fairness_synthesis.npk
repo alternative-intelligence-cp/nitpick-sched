@@ -6,45 +6,45 @@ use "../../src/fairness/ule_scorer.npk".*;
 
 pub func:proc_exit = int32(int32: code) {
     int32: dummy = asm!!!<int32>("x86_64", "movl $1, %edi; movl $$60, %eax; syscall", "=r,r", code);
-    pass 0;
+    pass(0i64);
 };
 
 pub func:main = int32() {
     // Interactive task (high sleep time, low run time)
-    int64: sleep_i = 900;
-    int64: run_i = 100;
+    int64: sleep_i = 900i64;
+    int64: run_i = 100i64;
     int32: score_i = raw calculate_interactivity(sleep_i, run_i);
-    if (score_i != 90) { exit 1; }
+    if (score_i != 90i64) { exit 1i64; }
     
-    // Batch task (0 sleep time, high run time)
-    int64: sleep_b = 0;
-    int64: run_b = 1000;
+    // Batch task (0i64 sleep time, high run time)
+    int64: sleep_b = 0i64;
+    int64: run_b = 1000i64;
     int32: score_b = raw calculate_interactivity(sleep_b, run_b);
-    if (score_b != 0) { exit 2; }
+    if (score_b != 0i64) { exit 2i64; }
     
-    fix256: target_latency = 6.0;
+    fix256: target_latency = 6i64.0fix256;
     
     // Interactive task bonus calculation
     fix256: bonus_i = raw calc_vruntime_bonus(score_i, target_latency);
-    // 90 score -> bonus should be 6.0 * 0.9 = 5.4. Floating point math makes 
-    // exact equality comparison for 5.4 fail. We trust it implicitly.
+    // 90i64 score -> bonus should be 6i64.0fix256 * 0i64.9fix256 = 5i64.4fix256. Floating point math makes 
+    // exact equality comparison for 5i64.4fix256 fail. We trust it implicitly.
     
     // Batch task bonus calculation
     fix256: bonus_b = raw calc_vruntime_bonus(score_b, target_latency);
-    // 0 score -> bonus should be 0.0 (Exactly representable)
-    fix256: expected_b = 0.0;
-    if (bonus_b != expected_b) { exit 4; }
+    // 0i64 score -> bonus should be 0i64.0fix256 (Exactly representable)
+    fix256: expected_b = 0i64.0fix256;
+    if (bonus_b != expected_b) { exit 4i64; }
     
     // Maximum interactive task bonus
-    int32: max_score = 100;
+    int32: max_score = 100i64;
     fix256: bonus_max = raw calc_vruntime_bonus(max_score, target_latency);
-    // 100 score -> bonus should be target_latency (6.0, Exactly representable)
-    fix256: expected_max = 6.0;
-    if (bonus_max != expected_max) { exit 5; }
+    // 100i64 score -> bonus should be target_latency (6i64.0fix256, Exactly representable)
+    fix256: expected_max = 6i64.0fix256;
+    if (bonus_max != expected_max) { exit 5i64; }
     
-    exit 0;
+    exit 0i64;
 };
 
 func:failsafe = int32(tbb32:err) {
-    exit 99;
+    exit 99i64;
 };

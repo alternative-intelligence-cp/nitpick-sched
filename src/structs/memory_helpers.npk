@@ -9,8 +9,8 @@ pub func:read_int32 = int32(int64: ptr) {
 };
 pub func:read_bool = bool(int64: ptr) {
     int8: b = asm!!!<int8>("x86_64", "movb ($1), $0", "=q,r", ptr);
-    if (b == 0) { pass false; }
-    pass true;
+    if (b == 0i64) { pass(false); }
+    pass(true);
 };
 pub func:write_int64 = int32(int64: ptr, int64: val) {
     pass asm!!!<int32>("x86_64", "movq $2, ($1)", "=r,r,r", ptr, val);
@@ -19,8 +19,8 @@ pub func:write_int32 = int32(int64: ptr, int32: val) {
     pass asm!!!<int32>("x86_64", "movl $2, ($1)", "=r,r,r", ptr, val);
 };
 pub func:write_bool = int32(int64: ptr, bool: val) {
-    int8: b = 0;
-    if (val) { b = 1; }
+    int8: b = 0i64;
+    if (val) { b = 1i64; }
     pass asm!!!<int32>("x86_64", "movb $2, ($1)", "=r,r,q", ptr, b);
 };
 pub func:int32_to_int64 = int64(int32: val) {
@@ -33,14 +33,14 @@ pub func:int64_to_int32 = int32(int64: val) {
 
 pub func:cmpxchg_int64 = bool(int64: ptr, int64: expected, int64: desired) {
     int32: success = asm!!!<int32>("x86_64", "lock cmpxchgq $3, ($1); setz %al; movzbl %al, $0", "=r,r,{rax},r", ptr, expected, desired);
-    if (success == 0) { pass false; }
-    pass true;
+    if (success == 0i64) { pass(false); }
+    pass(true);
 };
 
 pub func:atomic_fetch_add_int32 = int32(int64: ptr, int32: val) {
     pass asm!!!<int32>("x86_64", "lock xaddl $0, ($1)", "=r,r,0", ptr, val);
 };
 pub func:atomic_fetch_add_int64 = int64(int64: ptr, int64: val) {
-    // $0 = output, $1 = ptr, $2 = val (tied to $0)
+    // $0i64 = output, $1i64 = ptr, $2i64 = val (tied to $0i64)
     pass asm!!!<int64>("x86_64", "lock xaddq $0, ($1)", "=r,r,0", ptr, val);
 };

@@ -7,9 +7,9 @@ pub struct:Timespec = {
 };
 
 pub func:sys_clock_nanosleep = int32(int64: nsec) {
-    Timespec->: req = calloc(1, 16) => Timespec->;
-    req->tv_sec = nsec / 1000000000;
-    req->tv_nsec = nsec - (req->tv_sec * 1000000000);
+    wild Timespec->: req = calloc(1i64, 16i64) => Timespec->;
+    req->tv_sec = nsec / 1000000000i64;
+    req->tv_nsec = nsec - (req->tv_sec * 1000000000i64);
     
     int64: ptr = raw ptr_to_int(req => any->);
     
@@ -20,7 +20,7 @@ pub func:sys_clock_nanosleep = int32(int64: nsec) {
     );
     
     drop res;
-    pass 0;
+    pass(0i64);
 };
 
 pub func:preempt_sys_clone = int64(int64: flags, int64: child_stack) {
@@ -29,22 +29,22 @@ pub func:preempt_sys_clone = int64(int64: flags, int64: child_stack) {
         "=r,r,r,~{rcx},~{r11},~{rax},~{rdi},~{rsi},~{rdx},~{r10},~{r8}",
         flags, child_stack
     );
-    pass res;
+    pass(res);
 };
 
 pub func:spawn_replacement_worker = int64() {
-    int64: stack_size = 1048576; // 1 MB
-    int8->: stack_mem = calloc(1, stack_size);
+    int64: stack_size = 1048576i64; // 1i64 MB
+    wild int8->: stack_mem = calloc(1i64, stack_size) => int8->;
     int64: stack_top = raw ptr_to_int(stack_mem => any->) + stack_size;
     
-    int64: clone_flags = 331520; // 0x50f00
+    int64: clone_flags = 331520i64; // 0x50f00
     int64: res = raw preempt_sys_clone(clone_flags, stack_top);
-    pass res;
+    pass(res);
 };
 
 pub func:monitor_budget_expiry = int64(TCB->: task) {
-    int64: sleep_ns = 1000000;
+    int64: sleep_ns = 1000000i64;
     drop sys_clock_nanosleep(sleep_ns);
     int64: tid = raw spawn_replacement_worker();
-    pass tid;
+    pass(tid);
 };

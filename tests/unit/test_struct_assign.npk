@@ -1,0 +1,21 @@
+use "../../src/structs/queue.npk".{TCBQueue};
+use "../../src/structs/handle.npk".{IdxHandle};
+use "../../src/structs/tcb.npk".{TCB};
+
+pub func:main = int32() {
+    TCBQueue: q;
+    q.count = 0i64;
+    TCBQueue->: pq = @q;
+    
+    IdxHandle<TCB>: h;
+    h.index = 10i64;
+    h.generation = 11i64;
+
+    pq->head = h;
+    
+    exit 0i64;
+};
+
+func:failsafe = int32(tbb32:err) {
+    exit 1i64;
+};

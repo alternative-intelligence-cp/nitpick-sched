@@ -1,0 +1,12 @@
+pub struct:ArenaSlot = { int64: next_free; };
+pub struct:Arena = { ArenaSlot->: slots; int64: first_free; };
+pub func:main = int32() {
+    Arena: arena;
+    arena.slots = calloc(10i64, 8i64) => ArenaSlot->;
+    arena.slots[0i64].next_free = 42i64;
+    int64: idx = 0i64;
+    int64: temp = arena.slots[idx].next_free;
+    if (temp != 42i64) { exit 1i64; }
+    exit 0i64;
+};
+pub func:failsafe = int32(tbb32:err) { exit 99i64; };

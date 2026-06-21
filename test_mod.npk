@@ -1,0 +1,6 @@
+pub func:main = int32() {
+    int64: a = 150;
+    int64: b = a % 128;
+    exit 0;
+};
+func:failsafe = int32(tbb32:err) { exit 99; };

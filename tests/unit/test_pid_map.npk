@@ -3,54 +3,54 @@ use "../../src/structs/pid_map.npk".{PidMap, pid_map_init, pid_map_insert, pid_m
 
 func:main = int32() {
     IdxHandle<TCB>: h1;
-    h1.index = 5;
-    h1.generation = 1;
+    h1.index = 5i64;
+    h1.generation = 1i64;
     
     IdxHandle<TCB>: h2;
-    h2.index = 42;
-    h2.generation = 2;
+    h2.index = 42i64;
+    h2.generation = 2i64;
 
     PidMap: map;
-    map.capacity = 1024;
+    map.capacity = 1024i64;
     drop pid_map_init(@map);
     
-    if (map.slots[100].occupied) {
-        exit 128; // Exits with 128 if it's true after init!
+    if (map.slots[100i64].occupied) {
+        exit 128i64; // Exits with 128i64 if it's true after init!
     }
     
-    int32: ok1 = raw pid_map_insert(@map, 100, @h1);
-    if (ok1 != 0) { exit ok1; } // Exit with ok1
+    int32: ok1 = raw pid_map_insert(@map, 100i64, @h1);
+    if (ok1 != 0i64) { exit ok1; } // Exit with ok1
     
     
-    int32: ok2 = raw pid_map_insert(@map, 200, @h2);
-    if (ok2 != 0) { exit ok2; }
+    int32: ok2 = raw pid_map_insert(@map, 200i64, @h2);
+    if (ok2 != 0i64) { exit ok2; }
     
     // Test Lookup
-    IdxHandle<TCB>: l1 = raw pid_map_lookup(@map, 100);
-    if (l1.index != 5) { exit 3; }
-    if (l1.generation != 1) { exit 4; }
+    IdxHandle<TCB>: l1 = raw pid_map_lookup(@map, 100i64);
+    if (l1.index != 5i64) { exit 3i64; }
+    if (l1.generation != 1i64) { exit 4i64; }
     
-    IdxHandle<TCB>: l2 = raw pid_map_lookup(@map, 200);
-    if (l2.index != 42) { exit 5; }
+    IdxHandle<TCB>: l2 = raw pid_map_lookup(@map, 200i64);
+    if (l2.index != 42i64) { exit 5i64; }
     
     // Test Lookup Non-existent
-    IdxHandle<TCB>: l3 = raw pid_map_lookup(@map, 300);
-    if (l3.index != -1) { exit 6; }
+    IdxHandle<TCB>: l3 = raw pid_map_lookup(@map, 300i64);
+    if (l3.index != -1i64) { exit 6i64; }
     
     // Test Remove
-    bool: rm1 = raw pid_map_remove(@map, 100);
-    if (!rm1) { exit 7; }
+    bool: rm1 = raw pid_map_remove(@map, 100i64);
+    if (!rm1) { exit 7i64; }
     
-    IdxHandle<TCB>: l4 = raw pid_map_lookup(@map, 100);
-    if (l4.index != -1) { exit 8; }
+    IdxHandle<TCB>: l4 = raw pid_map_lookup(@map, 100i64);
+    if (l4.index != -1i64) { exit 8i64; }
     
     // Verify remaining
-    IdxHandle<TCB>: l5 = raw pid_map_lookup(@map, 200);
-    if (l5.index != 42) { exit 9; }
+    IdxHandle<TCB>: l5 = raw pid_map_lookup(@map, 200i64);
+    if (l5.index != 42i64) { exit 9i64; }
     
-    exit 0;
+    exit 0i64;
 };
 
 func:failsafe = int32(tbb32:err) {
-    exit 99;
+    exit 99i64;
 };

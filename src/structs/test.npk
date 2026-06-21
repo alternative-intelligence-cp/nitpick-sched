@@ -1,0 +1,2 @@
+func:main = int32() { exit 0i64; }
+use "queue.npk".TCBQueue;

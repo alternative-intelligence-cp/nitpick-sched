@@ -1,0 +1,125 @@
+// src/isolation/replenish.npk
+// Replenishment Queue for Sporadic Server
+use "../structs/memory_helpers.npk".*;
+
+Rules:ValidTime = {
+    $ >= 0i64
+};
+
+Rules:ValidAmount = {
+    $ >= 0i64,
+    $ <= 1000000000i64 // Prevent catastrophic overflow
+};
+
+pub struct:Replenishment = {
+    fix256: rTime;
+    fix256: rAmount;
+};
+
+// Size = 32i64 bytes
+pub struct:ReplenishQueue = {
+    int64: head;
+    int64: tail;
+    int64: count;
+    int64: capacity;
+    // Followed dynamically by Replenishment array
+};
+
+pub func:rq_init = ReplenishQueue->(int64: capacity) {
+    int64: q_bytes = 32i64 + (capacity * 64i64);
+    wild ReplenishQueue->: rq = calloc(1i64, q_bytes) => ReplenishQueue->;
+    
+    int64: base = raw ptr_to_int(rq => any->);
+    drop write_int64(base + 0i64, 0i64); // head
+    drop write_int64(base + 8i64, 0i64); // tail
+    drop write_int64(base + 16i64, 0i64); // count
+    drop write_int64(base + 24i64, capacity); // capacity
+    pass(rq);
+};
+
+pub func:rq_enqueue = int32(ReplenishQueue->:rq, int64: rTime, int64: rAmount) {
+    limit<ValidTime> int64: time_val = rTime;
+    limit<ValidAmount> int64: amt_val = rAmount;
+
+    // Minimum quantum coalescing (e.g., 100i64) to prevent micro-yield fragmentation
+    if (amt_val < 100i64) {
+        amt_val = 100i64;
+    }
+
+    int64: base = raw ptr_to_int(rq => any->);
+    int64: count = raw read_int64(base + 16i64);
+    int64: capacity = raw read_int64(base + 24i64);
+
+    if (count >= capacity) {
+        pass(88i32); // Queue full
+    }
+
+    int64: tail = raw read_int64(base + 8i64);
+    
+    // Slot offset: 32i64 + (tail * 64i64)
+    int64: slot_ptr = base + 32i64 + (tail * 64i64);
+    
+    // Write rTime (offset 0i64 in Replenishment)
+    drop write_int64(slot_ptr + 0i64, time_val);
+    drop write_int64(slot_ptr + 8i64, 0i64);
+    drop write_int64(slot_ptr + 16i64, 0i64);
+    drop write_int64(slot_ptr + 24i64, 0i64);
+
+    // Write rAmount (offset 32i64 in Replenishment)
+    drop write_int64(slot_ptr + 32i64, amt_val);
+    drop write_int64(slot_ptr + 40i64, 0i64);
+    drop write_int64(slot_ptr + 48i64, 0i64);
+    drop write_int64(slot_ptr + 56i64, 0i64);
+
+    // Update tail and count
+    int64: next_tail = tail + 1i64;
+    if (next_tail >= capacity) { next_tail = 0i64; }
+    
+    drop write_int64(base + 8i64, next_tail);
+    drop write_int64(base + 16i64, count + 1i64);
+
+    pass(0i32);
+};
+
+// Returns rAmount. If empty, returns -1i64. rTime_out is updated.
+pub func:rq_dequeue = int64(ReplenishQueue->:rq, int64->: rTime_out) {
+    int64: base = raw ptr_to_int(rq => any->);
+    int64: count = raw read_int64(base + 16i64);
+    
+    if (count <= 0i64) {
+        pass(-1i64);
+    }
+
+    int64: head = raw read_int64(base + 0i64);
+    int64: capacity = raw read_int64(base + 24i64);
+    
+    // Slot offset: 32i64 + (head * 64i64)
+    int64: slot_ptr = base + 32i64 + (head * 64i64);
+    
+    int64: time_val = raw read_int64(slot_ptr + 0i64);
+    int64: amt_val = raw read_int64(slot_ptr + 32i64);
+    
+    drop write_int64(raw ptr_to_int(rTime_out => any->), time_val);
+
+    int64: next_head = head + 1i64;
+    if (next_head >= capacity) { next_head = 0i64; }
+
+    drop write_int64(base + 0i64, next_head);
+    drop write_int64(base + 16i64, count - 1i64);
+
+    pass(amt_val);
+};
+
+pub func:rq_peek_time = int64(ReplenishQueue->:rq) {
+    int64: base = raw ptr_to_int(rq => any->);
+    int64: count = raw read_int64(base + 16i64);
+    
+    if (count <= 0i64) {
+        pass(-1i64);
+    }
+
+    int64: head = raw read_int64(base + 0i64);
+    int64: slot_ptr = base + 32i64 + (head * 64i64);
+    
+    pass(raw read_int64(slot_ptr + 0i64));
+};

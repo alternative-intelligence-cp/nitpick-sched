@@ -1,0 +1,26 @@
+pub func:cmpxchg_int64 = bool(int64: ptr, int64: expected, int64: desired) {
+    int32: success = asm!!!<int32>("x86_64", "movq $2, %rax; lock cmpxchgq $3, ($1); setz %al; movzbl %al, %eax; movl %eax, $0", "=r,r,r,r", ptr, expected, desired);
+    if (success == 0) { pass false; }
+    pass true;
+};
+
+pub func:proc_exit = int32(int32: code) {
+    int32: dummy = asm!!!<int32>("x86_64", "movl $1, %edi; movl $$60, %eax; syscall", "=r,r", code);
+    pass 0;
+};
+
+pub func:main = int32() {
+    int64: val = 100;
+    int64: ptr = asm!!!<int64>("x86_64", "leaq $1, $0", "=r,m", val); // get address of val
+    
+    bool: s1 = raw cmpxchg_int64(ptr, 50, 200); // Should fail
+    if (s1) { exit 1; }
+    
+    bool: s2 = raw cmpxchg_int64(ptr, 100, 200); // Should succeed
+    if (!s2) { exit 2; }
+    
+    if (val != 200) { exit 3; }
+    
+    exit 0;
+};
+func:failsafe = int32(tbb32:err) { exit 99; };

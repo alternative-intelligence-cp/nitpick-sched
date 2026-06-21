@@ -1,0 +1,277 @@
+[DEBUG parseFuncDecl] nameToken=main, peek()==, type=168
+[DEBUG parseFuncDecl] nameToken=failsafe, peek()==, type=168
+[DEBUG parseFuncDecl] nameToken=create_mock_tcb, peek()==, type=168
+[DEBUG parseFuncDecl] nameToken=clock_advance, peek()==, type=168
+[DEBUG ASSIGNMENT] op=168, leftType=6 (POINTER_MEMBER=7)
+[DEBUG ASSIGNMENT] op=168, leftType=6 (POINTER_MEMBER=7)
+[DEBUG ASSIGNMENT] op=168, leftType=6 (POINTER_MEMBER=7)
+[DEBUG ASSIGNMENT] op=168, leftType=6 (POINTER_MEMBER=7)
+[DEBUG ASSIGNMENT] op=168, leftType=6 (POINTER_MEMBER=7)
+[DEBUG IR_GEN] Initializer generated for 'cur', value = 0x5b7223bedea0
+[DEBUG IR_GEN] InitVal type: 0x5b7223be62f0
+[DEBUG IR_GEN] Default builder.CreateStore for cur
+[DEBUG ASSIGNMENT] op=168, leftType=1 (POINTER_MEMBER=7)
+[DEBUG ASSIGNMENT] op=168, leftType=7 (POINTER_MEMBER=7)
+[DEBUG POINTER_MEMBER_ASSIGN] SUCCESS for: current_time
+[DEBUG ASSIGNMENT] op=168, leftType=6 (POINTER_MEMBER=7)
+[DEBUG IR_GEN] Initializer generated for 'step', value = 0x5b7223bf5b90
+[DEBUG IR_GEN] InitVal type: 0x5b7223be62c0
+[DEBUG IR_GEN] Default builder.CreateStore for step
+[DEBUG CODEGEN CALL] Generating call to: drop
+[DEBUG CODEGEN CALL] Generating call to: clock_advance
+[DEBUG CODEGEN CALL] Generating call to: exit
+[DEBUG CODEGEN CALL] Generating call to: exit
+[1m:16:1: [0m[1;33mwarning[0m: [1m[unused-parameter] parameter 'err' is unused in function 'failsafe'[0m
+
+[WARN] Large integer types (128+ bit) detected. Using unoptimized codegen to avoid LLVM bugs.
+[DEBUG parseFuncDecl] nameToken=main, peek()==, type=168
+[DEBUG parseFuncDecl] nameToken=failsafe, peek()==, type=168
+[DEBUG parseFuncDecl] nameToken=pid_map_init, peek()==, type=168
+[DEBUG parseFuncDecl] nameToken=hash_pid, peek()==, type=168
+[DEBUG parseFuncDecl] nameToken=pid_map_insert_rec, peek()==, type=168
+[DEBUG parseFuncDecl] nameToken=pid_map_insert, peek()==, type=168
+[DEBUG parseFuncDecl] nameToken=pid_map_lookup_rec, peek()==, type=168
+[DEBUG parseFuncDecl] nameToken=pid_map_lookup, peek()==, type=168
+[DEBUG parseFuncDecl] nameToken=pid_map_remove_rec, peek()==, type=168
+[DEBUG parseFuncDecl] nameToken=pid_map_remove, peek()==, type=168
+Cast Succeeds! sourceIsPointer: 1 targetIsPointer: 1
+[DEBUG ASSIGNMENT] op=168, leftType=7 (POINTER_MEMBER=7)
+[DEBUG POINTER_MEMBER_ASSIGN] SUCCESS for: capacity
+[DEBUG ASSIGNMENT] op=168, leftType=7 (POINTER_MEMBER=7)
+[DEBUG POINTER_MEMBER_ASSIGN] SUCCESS for: count
+[DEBUG IR_GEN] Initializer generated for 'total_bytes', value = 0x589d039dcf90
+[DEBUG IR_GEN] InitVal type: 0x589d0397dbb8
+[DEBUG IR_GEN] Default builder.CreateStore for total_bytes
+[DEBUG ASSIGNMENT] op=168, leftType=7 (POINTER_MEMBER=7)
+[DEBUG CODEGEN CALL] Generating call to: calloc
+[DEBUG POINTER_MEMBER_ASSIGN] SUCCESS for: slots
+[DEBUG IR_GEN] Initializer generated for 'i', value = 0x589d039dcc20
+[DEBUG IR_GEN] InitVal type: 0x589d0397dbb8
+[DEBUG IR_GEN] Default builder.CreateStore for i
+[DEBUG ASSIGNMENT] op=168, leftType=6 (POINTER_MEMBER=7)
+[DEBUG ASSIGNMENT] op=168, leftType=1 (POINTER_MEMBER=7)
+[DEBUG IR_GEN] Initializer generated for 'h', value = 0x589d039c1300
+[DEBUG IR_GEN] InitVal type: 0x589d0397dbb8
+[DEBUG IR_GEN] Default builder.CreateStore for h
+[DEBUG ASSIGNMENT] op=168, leftType=1 (POINTER_MEMBER=7)
+[DEBUG IR_GEN] Initializer generated for 'cap', value = 0x589d039e5b30
+[DEBUG IR_GEN] InitVal type: 0x589d0397dbb8
+[DEBUG IR_GEN] Default builder.CreateStore for cap
+[DEBUG CODEGEN CALL] Generating call to: raw
+[DEBUG CODEGEN CALL] Generating call to: hash_pid
+[DEBUG IR_GEN] Initializer generated for 'h', value = 0x589d039e6390
+[DEBUG IR_GEN] InitVal type: 0x589d0397dbb8
+[DEBUG IR_GEN] Default builder.CreateStore for h
+[DEBUG CODEGEN CALL] Generating call to: raw
+[DEBUG CODEGEN CALL] Generating call to: pid_map_insert_rec
+[DEBUG ASSIGNMENT] op=168, leftType=6 (POINTER_MEMBER=7)
+[DEBUG ASSIGNMENT] op=168, leftType=6 (POINTER_MEMBER=7)
+[DEBUG IR_GEN] Initializer generated for 'cap', value = 0x589d039e9980
+[DEBUG IR_GEN] InitVal type: 0x589d0397dbb8
+[DEBUG IR_GEN] Default builder.CreateStore for cap
+[DEBUG CODEGEN CALL] Generating call to: raw
+[DEBUG CODEGEN CALL] Generating call to: hash_pid
+[DEBUG IR_GEN] Initializer generated for 'h', value = 0x589d039ea060
+[DEBUG IR_GEN] InitVal type: 0x589d0397dbb8
+[DEBUG IR_GEN] Default builder.CreateStore for h
+[DEBUG CODEGEN CALL] Generating call to: raw
+[DEBUG CODEGEN CALL] Generating call to: pid_map_lookup_rec
+[DEBUG IR_GEN] Initializer generated for 'cap', value = 0x589d039e5790
+[DEBUG IR_GEN] InitVal type: 0x589d0397dbb8
+[DEBUG IR_GEN] Default builder.CreateStore for cap
+[DEBUG CODEGEN CALL] Generating call to: raw
+[DEBUG CODEGEN CALL] Generating call to: hash_pid
+[DEBUG IR_GEN] Initializer generated for 'h', value = 0x589d039edf70
+[DEBUG IR_GEN] InitVal type: 0x589d0397dbb8
+[DEBUG IR_GEN] Default builder.CreateStore for h
+[DEBUG CODEGEN CALL] Generating call to: raw
+[DEBUG CODEGEN CALL] Generating call to: pid_map_remove_rec
+[DEBUG ASSIGNMENT] op=168, leftType=6 (POINTER_MEMBER=7)
+[DEBUG ASSIGNMENT] op=168, leftType=6 (POINTER_MEMBER=7)
+[DEBUG ASSIGNMENT] op=168, leftType=6 (POINTER_MEMBER=7)
+[DEBUG ASSIGNMENT] op=168, leftType=6 (POINTER_MEMBER=7)
+[DEBUG ASSIGNMENT] op=168, leftType=6 (POINTER_MEMBER=7)
+[DEBUG CODEGEN CALL] Generating call to: drop
+[DEBUG CODEGEN CALL] Generating call to: pid_map_init
+[DEBUG CODEGEN CALL] Generating call to: raw
+[DEBUG CODEGEN CALL] Generating call to: pid_map_insert
+[DEBUG IR_GEN] Initializer generated for 'ok1', value = 0x589d039f4820
+[DEBUG IR_GEN] InitVal type: 0x589d0397dba0
+[DEBUG IR_GEN] Default builder.CreateStore for ok1
+[DEBUG CODEGEN CALL] Generating call to: exit
+[DEBUG CODEGEN CALL] Generating call to: raw
+[DEBUG CODEGEN CALL] Generating call to: pid_map_insert
+[DEBUG IR_GEN] Initializer generated for 'ok2', value = 0x589d039f59c0
+[DEBUG IR_GEN] InitVal type: 0x589d0397dba0
+[DEBUG IR_GEN] Default builder.CreateStore for ok2
+[DEBUG CODEGEN CALL] Generating call to: exit
+[DEBUG CODEGEN CALL] Generating call to: raw
+[DEBUG CODEGEN CALL] Generating call to: pid_map_lookup
+[DEBUG IR_GEN] Initializer generated for 'l1', value = 0x589d039f6480
+[DEBUG IR_GEN] InitVal type: 0x589d039d99d0
+[DEBUG IR_GEN] Default builder.CreateStore for l1
+[DEBUG CODEGEN CALL] Generating call to: exit
+[DEBUG CODEGEN CALL] Generating call to: exit
+[DEBUG CODEGEN CALL] Generating call to: raw
+[DEBUG CODEGEN CALL] Generating call to: pid_map_lookup
+[DEBUG IR_GEN] Initializer generated for 'l2', value = 0x589d039f6b50
+[DEBUG IR_GEN] InitVal type: 0x589d039d99d0
+[DEBUG IR_GEN] Default builder.CreateStore for l2
+[DEBUG CODEGEN CALL] Generating call to: exit
+[DEBUG CODEGEN CALL] Generating call to: raw
+[DEBUG CODEGEN CALL] Generating call to: pid_map_lookup
+[DEBUG IR_GEN] Initializer generated for 'l3', value = 0x589d039f8730
+[DEBUG IR_GEN] InitVal type: 0x589d039d99d0
+[DEBUG IR_GEN] Default builder.CreateStore for l3
+[DEBUG CODEGEN CALL] Generating call to: exit
+[DEBUG CODEGEN CALL] Generating call to: raw
+[DEBUG CODEGEN CALL] Generating call to: pid_map_remove
+[DEBUG IR_GEN] Initializer generated for 'rm1', value = 0x589d039f92e0
+[DEBUG IR_GEN] InitVal type: 0x589d0397db58
+[DEBUG IR_GEN] Default builder.CreateStore for rm1
+[DEBUG CODEGEN CALL] Generating call to: exit
+[DEBUG CODEGEN CALL] Generating call to: raw
+[DEBUG CODEGEN CALL] Generating call to: pid_map_lookup
+[DEBUG IR_GEN] Initializer generated for 'l4', value = 0x589d039f9cf0
+[DEBUG IR_GEN] InitVal type: 0x589d039d99d0
+[DEBUG IR_GEN] Default builder.CreateStore for l4
+[DEBUG CODEGEN CALL] Generating call to: exit
+[DEBUG CODEGEN CALL] Generating call to: raw
+[DEBUG CODEGEN CALL] Generating call to: pid_map_lookup
+[DEBUG IR_GEN] Initializer generated for 'l5', value = 0x589d039fa840
+[DEBUG IR_GEN] InitVal type: 0x589d039d99d0
+[DEBUG IR_GEN] Default builder.CreateStore for l5
+[DEBUG CODEGEN CALL] Generating call to: exit
+[DEBUG CODEGEN CALL] Generating call to: exit
+[DEBUG CODEGEN CALL] Generating call to: exit
+[1m:54:1: [0m[1;33mwarning[0m: [1m[unused-parameter] parameter 'err' is unused in function 'failsafe'[0m
+
+[DEBUG parseFuncDecl] nameToken=main, peek()==, type=168
+[DEBUG parseFuncDecl] nameToken=failsafe, peek()==, type=168
+[DEBUG parseFuncDecl] nameToken=queue_init, peek()==, type=168
+[DEBUG parseFuncDecl] nameToken=queue_enqueue, peek()==, type=168
+[DEBUG parseFuncDecl] nameToken=queue_dequeue, peek()==, type=168
+[DEBUG parseFuncDecl] nameToken=queue_remove, peek()==, type=168
+[DEBUG parseFuncDecl] nameToken=arena_init, peek()==, type=168
+[DEBUG parseFuncDecl] nameToken=tcb_arena_allocate, peek()==, type=168
+[DEBUG parseFuncDecl] nameToken=tcb_arena_get, peek()==, type=168
+[DEBUG parseFuncDecl] nameToken=tcb_arena_release, peek()==, type=168
+Cast Succeeds! sourceIsPointer: 1 targetIsPointer: 1
+[1m/home/randy/Workspace/REPOS/nitpick-sched/tests/unit/test_queue.npk:0:0: [0m[1;31merror[0m: [1mLine 14, Column 5: Cannot silently unwrap Result<_Nitpick_M_IdxHandle_6c6ca619e19e81e6_TCB> into 'h1' of type '_Nitpick_M_IdxHandle_6c6ca619e19e81e6_TCB'. Declare as Result<_Nitpick_M_IdxHandle_6c6ca619e19e81e6_TCB> and check .is_error, or use 'raw expr' to explicitly assert the call cannot fail.[0m
+
+[1m/home/randy/Workspace/REPOS/nitpick-sched/tests/unit/test_queue.npk:0:0: [0m[1;31merror[0m: [1mLine 15, Column 5: Cannot silently unwrap Result<_Nitpick_M_IdxHandle_6c6ca619e19e81e6_TCB> into 'h2' of type '_Nitpick_M_IdxHandle_6c6ca619e19e81e6_TCB'. Declare as Result<_Nitpick_M_IdxHandle_6c6ca619e19e81e6_TCB> and check .is_error, or use 'raw expr' to explicitly assert the call cannot fail.[0m
+
+[1m/home/randy/Workspace/REPOS/nitpick-sched/tests/unit/test_queue.npk:0:0: [0m[1;31merror[0m: [1mLine 16, Column 5: Cannot silently unwrap Result<_Nitpick_M_IdxHandle_6c6ca619e19e81e6_TCB> into 'h3' of type '_Nitpick_M_IdxHandle_6c6ca619e19e81e6_TCB'. Declare as Result<_Nitpick_M_IdxHandle_6c6ca619e19e81e6_TCB> and check .is_error, or use 'raw expr' to explicitly assert the call cannot fail.[0m
+
+[1m/home/randy/Workspace/REPOS/nitpick-sched/tests/unit/test_queue.npk:0:0: [0m[1;31merror[0m: [1mLine 18, Column 9: Undefined identifier: 'h1'. Did you mean 'q'?[0m
+
+[1m/home/randy/Workspace/REPOS/nitpick-sched/tests/unit/test_queue.npk:0:0: [0m[1;31merror[0m: [1mLine 19, Column 9: Undefined identifier: 'h2'. Did you mean 'q'?[0m
+
+[1m/home/randy/Workspace/REPOS/nitpick-sched/tests/unit/test_queue.npk:0:0: [0m[1;31merror[0m: [1mLine 20, Column 9: Undefined identifier: 'h3'. Did you mean 'q'?[0m
+
+[1m/home/randy/Workspace/REPOS/nitpick-sched/tests/unit/test_queue.npk:0:0: [0m[1;31merror[0m: [1mLine 22, Column 48: Undefined identifier: 'h1'. Did you mean 'q'?[0m
+
+[1m/home/randy/Workspace/REPOS/nitpick-sched/tests/unit/test_queue.npk:0:0: [0m[1;31merror[0m: [1mLine 23, Column 9: Undefined identifier: 'ok1'. Did you mean 'q'?[0m
+
+[1m/home/randy/Workspace/REPOS/nitpick-sched/tests/unit/test_queue.npk:0:0: [0m[1;31merror[0m: [1mLine 25, Column 48: Undefined identifier: 'h2'. Did you mean 'q'?[0m
+
+[1m/home/randy/Workspace/REPOS/nitpick-sched/tests/unit/test_queue.npk:0:0: [0m[1;31merror[0m: [1mLine 26, Column 9: Undefined identifier: 'ok2'. Did you mean 'q'?[0m
+
+[1m/home/randy/Workspace/REPOS/nitpick-sched/tests/unit/test_queue.npk:0:0: [0m[1;31merror[0m: [1mLine 28, Column 48: Undefined identifier: 'h3'. Did you mean 'q'?[0m
+
+[1m/home/randy/Workspace/REPOS/nitpick-sched/tests/unit/test_queue.npk:0:0: [0m[1;31merror[0m: [1mLine 29, Column 9: Undefined identifier: 'ok3'. Did you mean 'q'?[0m
+
+[1m/home/randy/Workspace/REPOS/nitpick-sched/tests/unit/test_queue.npk:0:0: [0m[1;31merror[0m: [1mLine 32, Column 25: Undefined identifier: 'h1'. Did you mean 'q'?[0m
+
+[1m/home/randy/Workspace/REPOS/nitpick-sched/tests/unit/test_queue.npk:0:0: [0m[1;31merror[0m: [1mLine 33, Column 25: Undefined identifier: 'h3'. Did you mean 'q'?[0m
+
+[1m/home/randy/Workspace/REPOS/nitpick-sched/tests/unit/test_queue.npk:0:0: [0m[1;31merror[0m: [1mLine 35, Column 47: Undefined identifier: 'h1'. Did you mean 'q'?[0m
+
+[1m/home/randy/Workspace/REPOS/nitpick-sched/tests/unit/test_queue.npk:0:0: [0m[1;31merror[0m: [1mLine 36, Column 9: Undefined identifier: 'r1'. Did you mean 'q'?[0m
+
+[1m/home/randy/Workspace/REPOS/nitpick-sched/tests/unit/test_queue.npk:0:0: [0m[1;31merror[0m: [1mLine 37, Column 47: Undefined identifier: 'h2'. Did you mean 'q'?[0m
+
+[1m/home/randy/Workspace/REPOS/nitpick-sched/tests/unit/test_queue.npk:0:0: [0m[1;31merror[0m: [1mLine 38, Column 9: Undefined identifier: 'r2'. Did you mean 'q'?[0m
+
+[1m/home/randy/Workspace/REPOS/nitpick-sched/tests/unit/test_queue.npk:0:0: [0m[1;31merror[0m: [1mLine 39, Column 47: Undefined identifier: 'h3'. Did you mean 'q'?[0m
+
+[1m/home/randy/Workspace/REPOS/nitpick-sched/tests/unit/test_queue.npk:0:0: [0m[1;31merror[0m: [1mLine 40, Column 9: Undefined identifier: 'r3'. Did you mean 'q'?[0m
+
+[1m/home/randy/Workspace/REPOS/nitpick-sched/tests/unit/test_queue.npk:0:0: [0m[1;31merror[0m: [1mLine 42, Column 17: Undefined identifier: 'r1'. Did you mean 'q'?[0m
+
+[1m/home/randy/Workspace/REPOS/nitpick-sched/tests/unit/test_queue.npk:0:0: [0m[1;31merror[0m: [1mLine 43, Column 9: Undefined identifier: 't1'. Did you mean 'q'?[0m
+
+[1m/home/randy/Workspace/REPOS/nitpick-sched/tests/unit/test_queue.npk:0:0: [0m[1;31merror[0m: [1mLine 44, Column 9: Undefined identifier: 't1'. Did you mean 'q'?[0m
+
+[1m/home/randy/Workspace/REPOS/nitpick-sched/tests/unit/test_queue.npk:0:0: [0m[1;31merror[0m: [1mLine 44, Column 27: Undefined identifier: 'h2'. Did you mean 'q'?[0m
+
+[1m/home/randy/Workspace/REPOS/nitpick-sched/tests/unit/test_queue.npk:0:0: [0m[1;31merror[0m: [1mLine 46, Column 17: Undefined identifier: 'r2'. Did you mean 'q'?[0m
+
+[1m/home/randy/Workspace/REPOS/nitpick-sched/tests/unit/test_queue.npk:0:0: [0m[1;31merror[0m: [1mLine 47, Column 9: Undefined identifier: 't2'. Did you mean 'q'?[0m
+
+[1m/home/randy/Workspace/REPOS/nitpick-sched/tests/unit/test_queue.npk:0:0: [0m[1;31merror[0m: [1mLine 47, Column 27: Undefined identifier: 'h1'. Did you mean 'q'?[0m
+
+[1m/home/randy/Workspace/REPOS/nitpick-sched/tests/unit/test_queue.npk:0:0: [0m[1;31merror[0m: [1mLine 48, Column 9: Undefined identifier: 't2'. Did you mean 'q'?[0m
+
+[1m/home/randy/Workspace/REPOS/nitpick-sched/tests/unit/test_queue.npk:0:0: [0m[1;31merror[0m: [1mLine 48, Column 27: Undefined identifier: 'h3'. Did you mean 'q'?[0m
+
+[1m/home/randy/Workspace/REPOS/nitpick-sched/tests/unit/test_queue.npk:0:0: [0m[1;31merror[0m: [1mLine 50, Column 17: Undefined identifier: 'r3'. Did you mean 'q'?[0m
+
+[1m/home/randy/Workspace/REPOS/nitpick-sched/tests/unit/test_queue.npk:0:0: [0m[1;31merror[0m: [1mLine 51, Column 9: Undefined identifier: 't3'. Did you mean 'q'?[0m
+
+[1m/home/randy/Workspace/REPOS/nitpick-sched/tests/unit/test_queue.npk:0:0: [0m[1;31merror[0m: [1mLine 51, Column 27: Undefined identifier: 'h2'. Did you mean 'q'?[0m
+
+[1m/home/randy/Workspace/REPOS/nitpick-sched/tests/unit/test_queue.npk:0:0: [0m[1;31merror[0m: [1mLine 52, Column 9: Undefined identifier: 't3'. Did you mean 'q'?[0m
+
+[1m/home/randy/Workspace/REPOS/nitpick-sched/tests/unit/test_queue.npk:0:0: [0m[1;31merror[0m: [1mLine 55, Column 47: Undefined identifier: 'h2'. Did you mean 'q'?[0m
+
+[1m/home/randy/Workspace/REPOS/nitpick-sched/tests/unit/test_queue.npk:0:0: [0m[1;31merror[0m: [1mLine 56, Column 9: Undefined identifier: 'rm1'. Did you mean 'q'?[0m
+
+[1m/home/randy/Workspace/REPOS/nitpick-sched/tests/unit/test_queue.npk:0:0: [0m[1;31merror[0m: [1mLine 59, Column 9: Undefined identifier: 't1'. Did you mean 'q'?[0m
+
+[1m/home/randy/Workspace/REPOS/nitpick-sched/tests/unit/test_queue.npk:0:0: [0m[1;31merror[0m: [1mLine 59, Column 27: Undefined identifier: 'h3'. Did you mean 'q'?[0m
+
+[1m/home/randy/Workspace/REPOS/nitpick-sched/tests/unit/test_queue.npk:0:0: [0m[1;31merror[0m: [1mLine 60, Column 9: Undefined identifier: 't3'. Did you mean 'q'?[0m
+
+[1m/home/randy/Workspace/REPOS/nitpick-sched/tests/unit/test_queue.npk:0:0: [0m[1;31merror[0m: [1mLine 60, Column 27: Undefined identifier: 'h1'. Did you mean 'q'?[0m
+
+[1m/home/randy/Workspace/REPOS/nitpick-sched/tests/unit/test_queue.npk:0:0: [0m[1;31merror[0m: [1mLine 61, Column 9: Undefined identifier: 't2'. Did you mean 'q'?[0m
+
+[1m/home/randy/Workspace/REPOS/nitpick-sched/tests/unit/test_queue.npk:0:0: [0m[1;31merror[0m: [1mLine 62, Column 9: Undefined identifier: 't2'. Did you mean 'q'?[0m
+
+[1m/home/randy/Workspace/REPOS/nitpick-sched/tests/unit/test_queue.npk:0:0: [0m[1;31merror[0m: [1mLine 65, Column 5: Cannot silently unwrap Result<_Nitpick_M_IdxHandle_6c6ca619e19e81e6_TCB> into 'dh1' of type '_Nitpick_M_IdxHandle_6c6ca619e19e81e6_TCB'. Declare as Result<_Nitpick_M_IdxHandle_6c6ca619e19e81e6_TCB> and check .is_error, or use 'raw expr' to explicitly assert the call cannot fail.[0m
+
+[1m/home/randy/Workspace/REPOS/nitpick-sched/tests/unit/test_queue.npk:0:0: [0m[1;31merror[0m: [1mLine 66, Column 9: Undefined identifier: 'dh1'. Did you mean 'q'?[0m
+
+[1m/home/randy/Workspace/REPOS/nitpick-sched/tests/unit/test_queue.npk:0:0: [0m[1;31merror[0m: [1mLine 66, Column 22: Undefined identifier: 'h1'. Did you mean 'q'?[0m
+
+[1m/home/randy/Workspace/REPOS/nitpick-sched/tests/unit/test_queue.npk:0:0: [0m[1;31merror[0m: [1mLine 68, Column 25: Undefined identifier: 'h3'. Did you mean 'q'?[0m
+
+[1m/home/randy/Workspace/REPOS/nitpick-sched/tests/unit/test_queue.npk:0:0: [0m[1;31merror[0m: [1mLine 69, Column 9: Undefined identifier: 't3'. Did you mean 'q'?[0m
+
+[1m/home/randy/Workspace/REPOS/nitpick-sched/tests/unit/test_queue.npk:0:0: [0m[1;31merror[0m: [1mLine 71, Column 5: Cannot silently unwrap Result<_Nitpick_M_IdxHandle_6c6ca619e19e81e6_TCB> into 'dh2' of type '_Nitpick_M_IdxHandle_6c6ca619e19e81e6_TCB'. Declare as Result<_Nitpick_M_IdxHandle_6c6ca619e19e81e6_TCB> and check .is_error, or use 'raw expr' to explicitly assert the call cannot fail.[0m
+
+[1m/home/randy/Workspace/REPOS/nitpick-sched/tests/unit/test_queue.npk:0:0: [0m[1;31merror[0m: [1mLine 72, Column 9: Undefined identifier: 'dh2'. Did you mean 'q'?[0m
+
+[1m/home/randy/Workspace/REPOS/nitpick-sched/tests/unit/test_queue.npk:0:0: [0m[1;31merror[0m: [1mLine 72, Column 22: Undefined identifier: 'h3'. Did you mean 'q'?[0m
+
+[1m/home/randy/Workspace/REPOS/nitpick-sched/tests/unit/test_queue.npk:0:0: [0m[1;31merror[0m: [1mLine 78, Column 5: Cannot silently unwrap Result<_Nitpick_M_IdxHandle_6c6ca619e19e81e6_TCB> into 'dh3' of type '_Nitpick_M_IdxHandle_6c6ca619e19e81e6_TCB'. Declare as Result<_Nitpick_M_IdxHandle_6c6ca619e19e81e6_TCB> and check .is_error, or use 'raw expr' to explicitly assert the call cannot fail.[0m
+
+[1m/home/randy/Workspace/REPOS/nitpick-sched/tests/unit/test_queue.npk:0:0: [0m[1;31merror[0m: [1mLine 79, Column 9: Undefined identifier: 'dh3'. Did you mean 'q'?[0m
+
+[1mSummary: [0m[1;31m51 errors[0m
+[DEBUG parseFuncDecl] nameToken=main, peek()==, type=168
+[DEBUG parseFuncDecl] nameToken=failsafe, peek()==, type=168
+[DEBUG ASSIGNMENT] op=168, leftType=6 (POINTER_MEMBER=7)
+[DEBUG CODEGEN CALL] Generating call to: exit
+[DEBUG CODEGEN CALL] Generating call to: exit
+[1m:10:1: [0m[1;33mwarning[0m: [1m[unused-parameter] parameter 'err' is unused in function 'failsafe'[0m
+
+Running 4 test file(s)...
+
+  PASS: test_clock.npk
+  FAIL: test_pid_map.npk (exit code 3)
+  FAIL (compile error): test_queue.npk
+  PASS: test_tcb.npk
+
+Results: 2 passed, 1 failed, 1 errors (4 total)

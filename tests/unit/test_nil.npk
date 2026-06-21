@@ -1,0 +1,1 @@
+use "../../src/structs/tcb.npk".{TCB}; pub func:test_nil = TCB->() { pass(NIL); };

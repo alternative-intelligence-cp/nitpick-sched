@@ -1,0 +1,30 @@
+pub struct:TCB = {
+    int64: pid;
+    int32: state;
+    int32: priority;
+    int64: vruntime;
+    int64: time_slice;
+    int32: processor_affinity;
+    int32: flags;
+    int64: yield_count;
+    
+    int64: next_index;
+    int32: next_generation;
+    int64: prev_index;
+    int32: prev_generation;
+};
+
+pub struct:ArenaSlot = {
+    TCB: item;
+    int32: generation;
+    int64: next_free;
+    bool: occupied;
+};
+
+pub func:main = int32() {
+    ArenaSlot->: slots = calloc(2i64, 256i64) => ArenaSlot->;
+    slots[0i64].occupied = true;
+    slots[1i64].occupied = true; // wait, we can't test sizeof easily like this
+    exit 0i64;
+};
+pub func:failsafe = int32(tbb32:err) { exit 99i64; };
