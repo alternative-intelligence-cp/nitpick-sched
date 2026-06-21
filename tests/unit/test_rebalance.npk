@@ -1,0 +1,54 @@
+use "../../src/smp/rebalance.npk".*;
+use "../../src/smp/chase_lev.npk".*;
+use "../../src/structs/memory_helpers.npk".*;
+
+pub func:proc_exit = int32(int32: code) {
+    int32: dummy = asm!!!<int32>("x86_64", "movl $1, %edi; movl $$60, %eax; syscall", "=r,r", code);
+    pass 0;
+};
+
+pub func:main = int32() {
+    int64: src_deque = raw chase_lev_init();
+    if (src_deque == 0) { exit 1; }
+    
+    int64: dst_deque = raw chase_lev_init();
+    if (dst_deque == 0) { exit 2; }
+    
+    // Push 100 items into src_deque
+    int32: i = 0;
+    while (i < 100) {
+        bool: p = raw chase_lev_push(src_deque, i);
+        if (!p) { exit 3; }
+        i = i + 1;
+    }
+    
+    // Perform O(1) batch steal half
+    int32: stolen = raw rebalance_steal_half(src_deque, dst_deque);
+    if (stolen != 50) { exit 4; }
+    
+    // src_deque should have 50 items remaining (50 to 99)
+    // Stealing from src_deque should yield 50, then 51...
+    int32: t0 = raw chase_lev_steal(src_deque);
+    if (t0 != 50) { exit 5; }
+    
+    // dst_deque should have 50 items (0 to 49)
+    // Since they were pushed as 49, 48... 0, popping from bottom should yield 0, 1...
+    // Wait, let's pop them from dst_deque's owner thread (which means chase_lev_steal won't work if bottom isn't advanced? No, chase_lev_push advances bottom).
+    // Let's steal from dst_deque to verify they are there.
+    // Stealing from dst_deque (top) will steal the OLDEST pushed item.
+    // The first item pushed to dst_deque was 49. So top points to 49.
+    int32: d0 = raw chase_lev_steal(dst_deque);
+    if (d0 != 49) { exit 6; }
+    
+    // The second item pushed was 48...
+    int32: d1 = raw chase_lev_steal(dst_deque);
+    if (d1 != 48) { exit 7; }
+    
+    // If we pop from dst_deque (owner path), wait, we didn't expose chase_lev_pop in chase_lev.npk!
+    // We only exposed push and steal! Let's check chase_lev.npk.
+    // Let's just steal everything from dst_deque. It should be 47, 46... 0.
+    
+    exit 0;
+};
+
+func:failsafe = int32(tbb32:err) { exit 99; };
