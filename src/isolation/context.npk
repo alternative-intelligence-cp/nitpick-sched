@@ -1,0 +1,61 @@
+// src/isolation/context.npk
+// Scheduling Context (seL4 MCS style)
+
+use "../structs/memory_helpers.npk".*;
+
+pub struct:SchedulingContext = {
+    fix256: budget;
+    fix256: period;
+    fix256: consumed;
+}; // Total size: 96 bytes
+
+// Initializes the context, bypassing fix256 LLVM Codegen bugs by using manual pointers.
+pub func:sc_init = NIL(SchedulingContext->:sc, int64: budget_val, int64: period_val) requires(budget_val <= period_val) {
+    int64: base = raw ptr_to_int(sc => any->);
+    
+    // budget (offset 0)
+    drop write_int64(base + 0, budget_val);
+    drop write_int64(base + 8, 0);
+    drop write_int64(base + 16, 0);
+    drop write_int64(base + 24, 0);
+    
+    // period (offset 32)
+    drop write_int64(base + 32, period_val);
+    drop write_int64(base + 40, 0);
+    drop write_int64(base + 48, 0);
+    drop write_int64(base + 56, 0);
+    
+    // consumed (offset 64)
+    drop write_int64(base + 64, 0);
+    drop write_int64(base + 72, 0);
+    drop write_int64(base + 80, 0);
+    drop write_int64(base + 88, 0);
+    
+    pass NIL;
+};
+
+// Returns true if the context has exceeded its budget.
+pub func:sc_exhausted = bool(SchedulingContext->:sc) {
+    int64: base = raw ptr_to_int(sc => any->);
+    int64: budget_val = raw read_int64(base + 0);
+    int64: consumed_val = raw read_int64(base + 64);
+    
+    if (consumed_val >= budget_val) {
+        pass true;
+    }
+    pass false;
+};
+
+pub func:sc_consume = NIL(SchedulingContext->:sc, int64: amount) {
+    int64: base = raw ptr_to_int(sc => any->);
+    int64: consumed_val = raw read_int64(base + 64);
+    
+    drop write_int64(base + 64, consumed_val + amount);
+    pass NIL;
+};
+
+pub func:sc_replenish = NIL(SchedulingContext->:sc) {
+    int64: base = raw ptr_to_int(sc => any->);
+    drop write_int64(base + 64, 0);
+    pass NIL;
+};
