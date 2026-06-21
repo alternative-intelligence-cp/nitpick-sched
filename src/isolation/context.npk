@@ -1,61 +1,42 @@
 // src/isolation/context.npk
 // Scheduling Context (seL4 MCS style)
 
-use "../structs/memory_helpers.npk".*;
-
 pub struct:SchedulingContext = {
     fix256: budget;
     fix256: period;
     fix256: consumed;
-}; // Total size: 96i64 bytes
+};
 
-// Initializes the context, bypassing fix256 LLVM Codegen bugs by using manual pointers.
-pub func:sc_init = NIL(SchedulingContext->:sc, int64: budget_val, int64: period_val) requires(budget_val <= period_val) {
-    int64: base = raw ptr_to_int(sc => any->);
+pub func:sc_init = NIL(wild SchedulingContext->:sc, int64: budget_val, int64: period_val) requires(budget_val <= period_val) {
+    fix256: b_temp = budget_val => fix256;
+    fix256: p_temp = period_val => fix256;
+    fix256: c_temp = 0i64 => fix256;
     
-    // budget (offset 0i64)
-    drop write_int64(base + 0i64, budget_val);
-    drop write_int64(base + 8i64, 0i64);
-    drop write_int64(base + 16i64, 0i64);
-    drop write_int64(base + 24i64, 0i64);
-    
-    // period (offset 32i64)
-    drop write_int64(base + 32i64, period_val);
-    drop write_int64(base + 40i64, 0i64);
-    drop write_int64(base + 48i64, 0i64);
-    drop write_int64(base + 56i64, 0i64);
-    
-    // consumed (offset 64i64)
-    drop write_int64(base + 64i64, 0i64);
-    drop write_int64(base + 72i64, 0i64);
-    drop write_int64(base + 80i64, 0i64);
-    drop write_int64(base + 88i64, 0i64);
+    sc->budget = b_temp;
+    sc->period = p_temp;
+    sc->consumed = c_temp;
     
     pass(NIL);
 };
 
 // Returns true if the context has exceeded its budget.
-pub func:sc_exhausted = bool(SchedulingContext->:sc) {
-    int64: base = raw ptr_to_int(sc => any->);
-    int64: budget_val = raw read_int64(base + 0i64);
-    int64: consumed_val = raw read_int64(base + 64i64);
-    
-    if (consumed_val >= budget_val) {
+pub func:sc_exhausted = bool(wild SchedulingContext->:sc) {
+    if (sc->consumed >= sc->budget) {
         pass(true);
     }
     pass(false);
 };
 
-pub func:sc_consume = NIL(SchedulingContext->:sc, int64: amount) {
-    int64: base = raw ptr_to_int(sc => any->);
-    int64: consumed_val = raw read_int64(base + 64i64);
-    
-    drop write_int64(base + 64i64, consumed_val + amount);
+pub func:sc_consume = NIL(wild SchedulingContext->:sc, int64: amount) {
+    fix256: a_temp = amount => fix256;
+    fix256: c_temp = sc->consumed;
+    fix256: res_temp = c_temp + a_temp;
+    sc->consumed = res_temp;
     pass(NIL);
 };
 
-pub func:sc_replenish = NIL(SchedulingContext->:sc) {
-    int64: base = raw ptr_to_int(sc => any->);
-    drop write_int64(base + 64i64, 0i64);
+pub func:sc_replenish = NIL(wild SchedulingContext->:sc) {
+    fix256: zero = 0i64 => fix256;
+    sc->consumed = zero;
     pass(NIL);
 };

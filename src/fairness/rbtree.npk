@@ -1,261 +1,302 @@
 // src/fairness/rbtree.npk
 // Red-Black Tree for CFS Scheduling
 
-use "../structs/memory_helpers.npk".*;
+use "../structs/tcb.npk".*;
+
+pub struct:RBTNode = {
+    int32: left;
+    int32: right;
+    int32: parent;
+    int32: color;
+    fix256: vruntime;
+    int64: pid;
+    Handle<TCB>: tcb;
+    int32: next_free;
+    int32: padding;
+};
 
 pub struct:RBTree = {
     int32: root;
     int32: leftmost;
     int32: capacity;
     int32: free_head;
+    int64: padding1;
+    int64: padding2;
+    // RBTNode array follows immediately
 };
 
-pub func:rbt_init = RBTree->(int32: cap) {
-    int64: bytes = 16i64 + (raw int32_to_int64(cap) * 40i64);
-    wild RBTree->: tree = calloc(1i64, bytes) => RBTree->;
-    int64: base = raw ptr_to_int(tree => any->);
-    drop write_int32(base + 0i64, -1i64);
-    drop write_int32(base + 4i64, -1i64);
-    drop write_int32(base + 8i64, cap);
-    drop write_int32(base + 12i64, 0i64);
+pub func:rbt_init = wild RBTree->(int32: cap) {
+    int64: cap64 = cap => int64;
+    int64: bytes = 32i64 + (cap64 * 96i64); // RBTNode is 96 bytes aligned
+    wild RBTree->: tree = calloc(1i64, bytes) => wild RBTree->;
     
-    int32: i = 0i64;
+    tree->root = -1i32;
+    tree->leftmost = -1i32;
+    tree->capacity = cap;
+    tree->free_head = 0i32;
+    
+    int64: base = tree => int64;
+    
+    int32: i = 0i32;
     while (i < cap) {
-        int64: ptr = base + 16i64 + (raw int32_to_int64(i) * 40i64);
-        int32: next = i + 1i64;
-        if (next == cap) { next = -1i64; }
-        drop write_int32(ptr + 36i64, next);
-        i = i + 1i64;
+        int64: i64_val = i => int64;
+        wild RBTNode->: node = (base + 32i64 + (i64_val * 96i64)) => wild RBTNode->;
+        int32: next = i + 1i32;
+        if (next == cap) { next = -1i32; }
+        node->next_free = next;
+        i = i + 1i32;
     }
     pass(tree);
 };
 
-pub func:get_ptr = int64(RBTree->:tree, int32: idx) {
-    int64: base = raw ptr_to_int(tree => any->);
-    pass(base + 16i64 + (raw int32_to_int64(idx) * 40i64));
+pub func:get_node = wild RBTNode->(wild RBTree->:tree, int32: idx) {
+    int64: base = tree => int64;
+    int64: idx64 = idx => int64;
+    pass((base + 32i64 + (idx64 * 96i64)) => wild RBTNode->);
 };
 
-pub func:get_left = int32(RBTree->:tree, int32: n) { if (n == -1i64) { pass(-1i64); } pass(raw read_int32(raw get_ptr(tree, n) + 0i64)); };
-pub func:set_left = NIL(RBTree->:tree, int32: n, int32: val) { if (n != -1i64) { drop write_int32(raw get_ptr(tree, n) + 0i64, val); } pass(NIL); };
+pub func:get_left = int32(wild RBTree->:tree, int32: n) { if (n == -1i32) { pass(-1i32); } wild RBTNode->: node = _! get_node(tree, n); pass(node->left); };
+pub func:set_left = NIL(wild RBTree->:tree, int32: n, int32: val) { if (n != -1i32) { wild RBTNode->: node = _! get_node(tree, n); node->left = val; } pass(NIL); };
 
-pub func:get_right = int32(RBTree->:tree, int32: n) { if (n == -1i64) { pass(-1i64); } pass(raw read_int32(raw get_ptr(tree, n) + 4i64)); };
-pub func:set_right = NIL(RBTree->:tree, int32: n, int32: val) { if (n != -1i64) { drop write_int32(raw get_ptr(tree, n) + 4i64, val); } pass(NIL); };
+pub func:get_right = int32(wild RBTree->:tree, int32: n) { if (n == -1i32) { pass(-1i32); } wild RBTNode->: node = _! get_node(tree, n); pass(node->right); };
+pub func:set_right = NIL(wild RBTree->:tree, int32: n, int32: val) { if (n != -1i32) { wild RBTNode->: node = _! get_node(tree, n); node->right = val; } pass(NIL); };
 
-pub func:get_parent = int32(RBTree->:tree, int32: n) { if (n == -1i64) { pass(-1i64); } pass(raw read_int32(raw get_ptr(tree, n) + 8i64)); };
-pub func:set_parent = NIL(RBTree->:tree, int32: n, int32: val) { if (n != -1i64) { drop write_int32(raw get_ptr(tree, n) + 8i64, val); } pass(NIL); };
+pub func:get_parent = int32(wild RBTree->:tree, int32: n) { if (n == -1i32) { pass(-1i32); } wild RBTNode->: node = _! get_node(tree, n); pass(node->parent); };
+pub func:set_parent = NIL(wild RBTree->:tree, int32: n, int32: val) { if (n != -1i32) { wild RBTNode->: node = _! get_node(tree, n); node->parent = val; } pass(NIL); };
 
-pub func:get_color = int32(RBTree->:tree, int32: n) { if (n == -1i64) { pass(0i64); } pass(raw read_int32(raw get_ptr(tree, n) + 12i64)); };
-pub func:set_color = NIL(RBTree->:tree, int32: n, int32: val) { if (n != -1i64) { drop write_int32(raw get_ptr(tree, n) + 12i64, val); } pass(NIL); };
+pub func:get_color = int32(wild RBTree->:tree, int32: n) { if (n == -1i32) { pass(0i32); } wild RBTNode->: node = _! get_node(tree, n); pass(node->color); };
+pub func:set_color = NIL(wild RBTree->:tree, int32: n, int32: val) { if (n != -1i32) { wild RBTNode->: node = _! get_node(tree, n); node->color = val; } pass(NIL); };
 
-pub func:get_vruntime = int64(RBTree->:tree, int32: n) { if (n == -1i64) { pass(0i64); } pass(raw read_int64(raw get_ptr(tree, n) + 16i64)); };
-pub func:set_vruntime = NIL(RBTree->:tree, int32: n, int64: val) { if (n != -1i64) { drop write_int64(raw get_ptr(tree, n) + 16i64, val); } pass(NIL); };
+pub func:get_pid = int64(wild RBTree->:tree, int32: n) { if (n == -1i32) { pass(0i64); } wild RBTNode->: node = _! get_node(tree, n); pass(node->pid); };
+pub func:set_pid = NIL(wild RBTree->:tree, int32: n, int64: val) { if (n != -1i32) { wild RBTNode->: node = _! get_node(tree, n); node->pid = val; } pass(NIL); };
 
-pub func:get_pid = int64(RBTree->:tree, int32: n) { if (n == -1i64) { pass(0i64); } pass(raw read_int64(raw get_ptr(tree, n) + 24i64)); };
-pub func:set_pid = NIL(RBTree->:tree, int32: n, int64: val) { if (n != -1i64) { drop write_int64(raw get_ptr(tree, n) + 24i64, val); } pass(NIL); };
+pub func:get_tcb = Handle<TCB>(wild RBTree->:tree, int32: n) { 
+    if (n == -1i32) { 
+        Handle<TCB>: invalid;
+        invalid.index = 0u64;
+        invalid.generation = 0u32;
+        pass(invalid); 
+    } 
+    wild RBTNode->: node = _! get_node(tree, n); 
+    pass(node->tcb); 
+};
+pub func:set_tcb = NIL(wild RBTree->:tree, int32: n, Handle<TCB>: val) { if (n != -1i32) { wild RBTNode->: node = _! get_node(tree, n); node->tcb = val; } pass(NIL); };
 
-pub func:get_tcb = int32(RBTree->:tree, int32: n) { if (n == -1i64) { pass(-1i64); } pass(raw read_int32(raw get_ptr(tree, n) + 32i64)); };
-pub func:set_tcb = NIL(RBTree->:tree, int32: n, int32: val) { if (n != -1i64) { drop write_int32(raw get_ptr(tree, n) + 32i64, val); } pass(NIL); };
+pub func:get_root = int32(wild RBTree->:tree) { pass(tree->root); };
+pub func:set_root = NIL(wild RBTree->:tree, int32: val) { tree->root = val; pass(NIL); };
 
-pub func:get_root = int32(RBTree->:tree) { pass(raw read_int32(raw ptr_to_int(tree => any->) + 0i64)); };
-pub func:set_root = NIL(RBTree->:tree, int32: val) { drop write_int32(raw ptr_to_int(tree => any->) + 0i64, val); pass(NIL); };
-
-pub func:rbt_alloc = int32(RBTree->:tree) {
-    int64: base = raw ptr_to_int(tree => any->);
-    int32: free_head = raw read_int32(base + 12i64);
-    if (free_head == -1i64) { pass(-1i64); }
+pub func:rbt_alloc = int32(wild RBTree->:tree) {
+    int32: free_head = tree->free_head;
+    if (free_head == -1i32) { pass(-1i32); }
     
-    int64: ptr = raw get_ptr(tree, free_head);
-    drop write_int32(base + 12i64, raw read_int32(ptr + 36i64));
+    wild RBTNode->: node = _! get_node(tree, free_head);
+    tree->free_head = node->next_free;
     
-    drop set_left(tree, free_head, -1i64);
-    drop set_right(tree, free_head, -1i64);
-    drop set_parent(tree, free_head, -1i64);
-    drop set_color(tree, free_head, 1i64); // Red
+    _? set_left(tree, free_head, -1i32);
+    _? set_right(tree, free_head, -1i32);
+    _? set_parent(tree, free_head, -1i32);
+    _? set_color(tree, free_head, 1i32); // Red
     pass(free_head);
 };
 
-pub func:rbt_free = NIL(RBTree->:tree, int32: n) {
-    if (n == -1i64) { pass(NIL); }
-    int64: base = raw ptr_to_int(tree => any->);
-    int32: free_head = raw read_int32(base + 12i64);
-    int64: ptr = raw get_ptr(tree, n);
-    drop write_int32(ptr + 36i64, free_head);
-    drop write_int32(base + 12i64, n);
+pub func:rbt_free = NIL(wild RBTree->:tree, int32: n) {
+    if (n == -1i32) { pass(NIL); }
+    int32: free_head = tree->free_head;
+    wild RBTNode->: node = _! get_node(tree, n);
+    node->next_free = free_head;
+    tree->free_head = n;
     pass(NIL);
 };
 
-pub func:rbt_compare = int32(RBTree->:tree, int32: a, int32: b) {
-    int64: va = raw get_vruntime(tree, a);
-    int64: vb = raw get_vruntime(tree, b);
+pub func:rbt_compare = int32(wild RBTree->:tree, int32: a, int32: b) {
+    fix256: va = 0.0fix256;
+    if (a != -1i32) {
+        wild RBTNode->: node_a = _! get_node(tree, a);
+        va = node_a->vruntime;
+    }
+    
+    fix256: vb = 0.0fix256;
+    if (b != -1i32) {
+        wild RBTNode->: node_b = _! get_node(tree, b);
+        vb = node_b->vruntime;
+    }
+    
     int32: cmp = va <=> vb;
-    if (cmp != 0i64) { pass(cmp); }
-    pass(raw get_pid(tree, a) <=> raw get_pid(tree, b));
+    if (cmp != 0i32) { pass(cmp); }
+    
+    // Equal vruntime, compare pid
+    int64: pida = _! get_pid(tree, a);
+    int64: pidb = _! get_pid(tree, b);
+    
+    int32: cmp_pid = pida <=> pidb;
+    pass(cmp_pid);
 };
 
-pub func:rbt_rotate_left = NIL(RBTree->:tree, int32: x) {
-    int32: y = raw get_right(tree, x);
-    drop set_right(tree, x, raw get_left(tree, y));
-    if (raw get_left(tree, y) != -1i64) {
-        drop set_parent(tree, raw get_left(tree, y), x);
+pub func:rbt_rotate_left = NIL(wild RBTree->:tree, int32: x) {
+    int32: y = _! get_right(tree, x);
+    _? set_right(tree, x, _! get_left(tree, y));
+    if (_! get_left(tree, y) != -1i32) {
+        _? set_parent(tree, _! get_left(tree, y), x);
     }
-    drop set_parent(tree, y, raw get_parent(tree, x));
-    if (raw get_parent(tree, x) == -1i64) {
-        drop set_root(tree, y);
+    _? set_parent(tree, y, _! get_parent(tree, x));
+    if (_! get_parent(tree, x) == -1i32) {
+        _? set_root(tree, y);
     } else {
-        if (x == raw get_left(tree, raw get_parent(tree, x))) {
-            drop set_left(tree, raw get_parent(tree, x), y);
+        if (x == _! get_left(tree, _! get_parent(tree, x))) {
+            _? set_left(tree, _! get_parent(tree, x), y);
         } else {
-            drop set_right(tree, raw get_parent(tree, x), y);
+            _? set_right(tree, _! get_parent(tree, x), y);
         }
     }
-    drop set_left(tree, y, x);
-    drop set_parent(tree, x, y);
+    _? set_left(tree, y, x);
+    _? set_parent(tree, x, y);
     pass(NIL);
 };
 
-pub func:rbt_rotate_right = NIL(RBTree->:tree, int32: x) {
-    int32: y = raw get_left(tree, x);
-    drop set_left(tree, x, raw get_right(tree, y));
-    if (raw get_right(tree, y) != -1i64) {
-        drop set_parent(tree, raw get_right(tree, y), x);
+pub func:rbt_rotate_right = NIL(wild RBTree->:tree, int32: x) {
+    int32: y = _! get_left(tree, x);
+    _? set_left(tree, x, _! get_right(tree, y));
+    if (_! get_right(tree, y) != -1i32) {
+        _? set_parent(tree, _! get_right(tree, y), x);
     }
-    drop set_parent(tree, y, raw get_parent(tree, x));
-    if (raw get_parent(tree, x) == -1i64) {
-        drop set_root(tree, y);
+    _? set_parent(tree, y, _! get_parent(tree, x));
+    if (_! get_parent(tree, x) == -1i32) {
+        _? set_root(tree, y);
     } else {
-        if (x == raw get_right(tree, raw get_parent(tree, x))) {
-            drop set_right(tree, raw get_parent(tree, x), y);
+        if (x == _! get_right(tree, _! get_parent(tree, x))) {
+            _? set_right(tree, _! get_parent(tree, x), y);
         } else {
-            drop set_left(tree, raw get_parent(tree, x), y);
+            _? set_left(tree, _! get_parent(tree, x), y);
         }
     }
-    drop set_right(tree, y, x);
-    drop set_parent(tree, x, y);
+    _? set_right(tree, y, x);
+    _? set_parent(tree, x, y);
     pass(NIL);
 };
 
-pub func:rbt_insert_fixup_safe = NIL(RBTree->:tree, int32: z_in) {
+pub func:rbt_insert_fixup_safe = NIL(wild RBTree->:tree, int32: z_in) {
     int32: z = z_in;
     bool: running = true;
     while (running) {
-        int32: p = raw get_parent(tree, z);
-        if (p == -1i64) { running = false; }
+        int32: p = _! get_parent(tree, z);
+        if (p == -1i32) { running = false; }
         if (running) {
-            if (raw get_color(tree, p) == 0i64) { running = false; }
+            if (_! get_color(tree, p) == 0i32) { running = false; }
         }
         
         if (running) {
-            int32: pp = raw get_parent(tree, p);
-            if (pp == -1i64) { 
+            int32: pp = _! get_parent(tree, p);
+            if (pp == -1i32) { 
                 running = false; 
             } else {
                 bool: skip = false;
-                if (p == raw get_left(tree, pp)) {
-                    int32: y = raw get_right(tree, pp);
-                    if (y != -1i64) {
-                        if (raw get_color(tree, y) == 1i64) {
-                            drop set_color(tree, p, 0i64);
-                            drop set_color(tree, y, 0i64);
-                            drop set_color(tree, pp, 1i64);
+                if (p == _! get_left(tree, pp)) {
+                    int32: y = _! get_right(tree, pp);
+                    if (y != -1i32) {
+                        if (_! get_color(tree, y) == 1i32) {
+                            _? set_color(tree, p, 0i32);
+                            _? set_color(tree, y, 0i32);
+                            _? set_color(tree, pp, 1i32);
                             z = pp;
                             skip = true;
                         }
                     }
                     if (!skip) {
-                        if (z == raw get_right(tree, p)) {
+                        if (z == _! get_right(tree, p)) {
                             z = p;
-                            drop rbt_rotate_left(tree, z);
-                            p = raw get_parent(tree, z);
-                            pp = raw get_parent(tree, p);
+                            _? rbt_rotate_left(tree, z);
+                            p = _! get_parent(tree, z);
+                            pp = _! get_parent(tree, p);
                         }
-                        drop set_color(tree, p, 0i64);
-                        drop set_color(tree, pp, 1i64);
-                        drop rbt_rotate_right(tree, pp);
+                        _? set_color(tree, p, 0i32);
+                        _? set_color(tree, pp, 1i32);
+                        _? rbt_rotate_right(tree, pp);
                     }
                 } else {
-                    int32: y = raw get_left(tree, pp);
-                    if (y != -1i64) {
-                        if (raw get_color(tree, y) == 1i64) {
-                            drop set_color(tree, p, 0i64);
-                            drop set_color(tree, y, 0i64);
-                            drop set_color(tree, pp, 1i64);
+                    int32: y = _! get_left(tree, pp);
+                    if (y != -1i32) {
+                        if (_! get_color(tree, y) == 1i32) {
+                            _? set_color(tree, p, 0i32);
+                            _? set_color(tree, y, 0i32);
+                            _? set_color(tree, pp, 1i32);
                             z = pp;
                             skip = true;
                         }
                     }
                     if (!skip) {
-                        if (z == raw get_left(tree, p)) {
+                        if (z == _! get_left(tree, p)) {
                             z = p;
-                            drop rbt_rotate_right(tree, z);
-                            p = raw get_parent(tree, z);
-                            pp = raw get_parent(tree, p);
+                            _? rbt_rotate_right(tree, z);
+                            p = _! get_parent(tree, z);
+                            pp = _! get_parent(tree, p);
                         }
-                        drop set_color(tree, p, 0i64);
-                        drop set_color(tree, pp, 1i64);
-                        drop rbt_rotate_left(tree, pp);
+                        _? set_color(tree, p, 0i32);
+                        _? set_color(tree, pp, 1i32);
+                        _? rbt_rotate_left(tree, pp);
                     }
                 }
             }
         }
     }
-    drop set_color(tree, raw get_root(tree), 0i64);
+    _? set_color(tree, _! get_root(tree), 0i32);
     pass(NIL);
 };
 
-pub func:rbt_insert = int32(RBTree->:tree, int64: vruntime, int64: pid, int32: tcb_h) {
-    int32: z = raw rbt_alloc(tree);
-    if (z == -1i64) { pass(-1i64); }
+pub func:rbt_insert = int32(wild RBTree->:tree, fix256: vruntime, int64: pid, Handle<TCB>: tcb_h) {
+    int32: z = _! rbt_alloc(tree);
+    if (z == -1i32) { pass(-1i32); }
     
-    drop set_vruntime(tree, z, vruntime);
-    drop set_pid(tree, z, pid);
-    drop set_tcb(tree, z, tcb_h);
+    wild RBTNode->: node_z = _! get_node(tree, z);
+    node_z->vruntime = vruntime;
     
-    int32: y = -1i64;
-    int32: x = raw get_root(tree);
+    _? set_pid(tree, z, pid);
+    _? set_tcb(tree, z, tcb_h);
     
-    while (x != -1i64) {
+    int32: y = -1i32;
+    int32: x = _! get_root(tree);
+    
+    while (x != -1i32) {
         y = x;
-        int32: cmp = raw rbt_compare(tree, z, x);
-        if (cmp < 0i64) {
-            x = raw get_left(tree, x);
+        int32: cmp = _! rbt_compare(tree, z, x);
+        if (cmp < 0i32) {
+            x = _! get_left(tree, x);
         } else {
-            x = raw get_right(tree, x);
+            x = _! get_right(tree, x);
         }
     }
     
-    drop set_parent(tree, z, y);
-    if (y == -1i64) {
-        drop set_root(tree, z);
+    _? set_parent(tree, z, y);
+    if (y == -1i32) {
+        _? set_root(tree, z);
     } else {
-        if (raw rbt_compare(tree, z, y) < 0i64) {
-            drop set_left(tree, y, z);
+        if (_! rbt_compare(tree, z, y) < 0i32) {
+            _? set_left(tree, y, z);
         } else {
-            drop set_right(tree, y, z);
+            _? set_right(tree, y, z);
         }
     }
     
-    drop rbt_insert_fixup_safe(tree, z);
+    _? rbt_insert_fixup_safe(tree, z);
     
     // Update leftmost cache
-    int64: base = raw ptr_to_int(tree => any->);
-    int32: lm = raw read_int32(base + 4i64);
-    if (lm == -1i64) {
-        drop write_int32(base + 4i64, z);
+    int32: lm = tree->leftmost;
+    if (lm == -1i32) {
+        tree->leftmost = z;
     } else {
-        if (raw rbt_compare(tree, z, lm) < 0i64) {
-            drop write_int32(base + 4i64, z);
+        if (_! rbt_compare(tree, z, lm) < 0i32) {
+            tree->leftmost = z;
         }
     }
     pass(z);
 };
 
-pub func:rbt_min = int32(RBTree->:tree, int32: node) {
-    if (node == -1i64) { pass(-1i64); }
+pub func:rbt_min = int32(wild RBTree->:tree, int32: node) {
+    if (node == -1i32) { pass(-1i32); }
     int32: current = node;
     bool: running = true;
     while (running) {
-        int32: l = raw get_left(tree, current);
-        if (l == -1i64) {
+        int32: l = _! get_left(tree, current);
+        if (l == -1i32) {
             running = false;
         } else {
             current = l;
@@ -264,44 +305,47 @@ pub func:rbt_min = int32(RBTree->:tree, int32: node) {
     pass(current);
 };
 
-pub func:rbt_peek_min = int32(RBTree->:tree) {
-    int64: base = raw ptr_to_int(tree => any->);
-    pass(raw read_int32(base + 4i64));
+pub func:rbt_peek_min = int32(wild RBTree->:tree) {
+    pass(tree->leftmost);
 };
 
-pub func:rbt_transplant = NIL(RBTree->:tree, int32: u, int32: v) {
-    int32: p = raw get_parent(tree, u);
-    if (p == -1i64) {
-        drop set_root(tree, v);
+pub func:rbt_transplant = NIL(wild RBTree->:tree, int32: u, int32: v) {
+    int32: p = _! get_parent(tree, u);
+    if (p == -1i32) {
+        _? set_root(tree, v);
     } else {
-        if (u == raw get_left(tree, p)) {
-            drop set_left(tree, p, v);
+        if (u == _! get_left(tree, p)) {
+            _? set_left(tree, p, v);
         } else {
-            drop set_right(tree, p, v);
+            _? set_right(tree, p, v);
         }
     }
-    if (v != -1i64) {
-        drop set_parent(tree, v, p);
+    if (v != -1i32) {
+        _? set_parent(tree, v, p);
     }
     pass(NIL);
 };
 
-pub func:rbt_extract_min = int32(RBTree->:tree) {
-    int64: base = raw ptr_to_int(tree => any->);
-    int32: z = raw read_int32(base + 4i64); // leftmost
-    if (z == -1i64) { pass(-1i64); }
+pub func:rbt_extract_min = Handle<TCB>(wild RBTree->:tree) {
+    int32: z = tree->leftmost;
+    if (z == -1i32) { 
+        Handle<TCB>: invalid;
+        invalid.index = 0u64;
+        invalid.generation = 0u32;
+        pass(invalid); 
+    }
     
-    int32: x = raw get_right(tree, z);
-    drop rbt_transplant(tree, z, raw get_right(tree, z));
+    int32: x = _! get_right(tree, z);
+    _? rbt_transplant(tree, z, _! get_right(tree, z));
     
-    int32: tcb_h = raw get_tcb(tree, z);
-    drop rbt_free(tree, z);
+    Handle<TCB>: tcb_h = _! get_tcb(tree, z);
+    _? rbt_free(tree, z);
     
-    int32: root = raw get_root(tree);
-    if (root == -1i64) {
-        drop write_int32(base + 4i64, -1i64);
+    int32: root = _! get_root(tree);
+    if (root == -1i32) {
+        tree->leftmost = -1i32;
     } else {
-        drop write_int32(base + 4i64, raw rbt_min(tree, root));
+        tree->leftmost = _! rbt_min(tree, root);
     }
     
     pass(tcb_h);

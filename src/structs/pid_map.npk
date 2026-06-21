@@ -1,16 +1,14 @@
-// pid_map.npk — Map from PID (int64) to IdxHandle<TCB>
+// pid_map.npk — Map from PID (int64) to Handle<TCB>
 use "tcb.npk".TCB;
-use "handle.npk".IdxHandle;
 
 pub struct:PidMapSlot = {
     int64: pid;
-    int64: handle_idx;
-    int64: handle_gen;
+    Handle<TCB>: handle;
     bool: occupied; // 0i64 = false, 1i64 = true
 };
 
 pub struct:PidMap = {
-    PidMapSlot->: slots;
+    wild PidMapSlot->: slots;
     int64: capacity;
     int64: count;
 };
@@ -18,13 +16,15 @@ pub struct:PidMap = {
 pub func:pid_map_init = NIL(PidMap->:map) {
     map->capacity = 1024i64;
     map->count = 0i64;
-    // PidMapSlot is approx 8i64 + 12i64 + 1i64 = 21i64 bytes. Allocate 32i64 bytes per slot.
+    // PidMapSlot is approx 8i64 + 16i64 + 1i64 = 25i64 bytes. Pad to 32i64 bytes per slot.
     int64: total_bytes = 1024i64 * 32i64;
-    map->slots = calloc(1024i64, 32i64) => PidMapSlot->;
+    map->slots = calloc(1024i64, 32i64) => wild PidMapSlot->;
     
     int64: i = 0i64;
+    int64: base = map->slots => int64;
     while (i < 1024i64) {
-        map->slots[i].occupied = false;
+        wild PidMapSlot->: slot = (base + (i * 32i64)) => wild PidMapSlot->;
+        slot->occupied = false;
         i = i + 1i64;
     }
     pass(NIL);
@@ -37,97 +37,84 @@ func:hash_pid = int64(int64:pid, int64:capacity) {
     pass(h);
 };
 
-func:pid_map_insert_rec = int32(PidMap->:map, int64:pid, IdxHandle<TCB>->:handle_ptr, int64: h, int64: iters, int64: cap) {
-    if (iters >= cap) {
-        pass(99i64);
-    }
-    
-    if (map->slots[h].occupied) {
-        if (map->slots[h].pid == pid) {
-            map->slots[h].handle_idx = handle_ptr->index;
-            map->slots[h].handle_gen = handle_ptr->generation;
-            pass(0i64);
-        }
-        
-        int64: next_h = h + 1i64;
-        if (next_h >= cap) { next_h = 0i64; }
-        
-        pass(raw pid_map_insert_rec(map, pid, handle_ptr, next_h, iters + 1i64, cap));
-    } else {
-        map->slots[h].pid = pid;
-        map->slots[h].handle_idx = handle_ptr->index;
-        map->slots[h].handle_gen = handle_ptr->generation;
-        map->slots[h].occupied = true;
-        map->count = map->count + 1i64;
-        pass(0i64);
-    }
-};
-
-pub func:pid_map_insert = int32(PidMap->:map, int64:pid, IdxHandle<TCB>->:handle_ptr) {
+pub func:pid_map_insert = int32(PidMap->:map, int64:pid, Handle<TCB>:handle) {
     if (map->count >= map->capacity) {
-        pass(88i64);
+        pass(88i32);
     }
     
     int64: cap = map->capacity;
-    int64: h = raw hash_pid(pid, cap);
+    int64: h = _! hash_pid(pid, cap);
+    int64: iters = 0i64;
+    int64: base = map->slots => int64;
     
-    pass(raw pid_map_insert_rec(map, pid, handle_ptr, h, 0i64, cap));
-};
-
-
-func:pid_map_lookup_rec = IdxHandle<TCB>(PidMap->:map, int64:pid, int64:h, int64:iters, int64:cap) {
-    if (iters >= cap) {
-        IdxHandle<TCB>: invalid;
-        invalid.index = -1i64;
-        invalid.generation = 0i64;
-        pass(invalid);
-    }
-    
-    if (map->slots[h].occupied) {
-        if (map->slots[h].pid == pid) {
-            IdxHandle<TCB>: valid;
-            valid.index = map->slots[h].handle_idx;
-            valid.generation = map->slots[h].handle_gen;
-            pass(valid);
+    while (iters < cap) {
+        wild PidMapSlot->: slot = (base + (h * 32i64)) => wild PidMapSlot->;
+        if (slot->occupied) {
+            if (slot->pid == pid) {
+                slot->handle = handle;
+                pass(0i32);
+            }
+            h = h + 1i64;
+            if (h >= cap) { h = 0i64; }
+        } else {
+            slot->pid = pid;
+            slot->handle = handle;
+            slot->occupied = true;
+            map->count = map->count + 1i64;
+            pass(0i32);
         }
-        int64: next_h = h + 1i64;
-        if (next_h >= cap) { next_h = 0i64; }
-        pass(raw pid_map_lookup_rec(map, pid, next_h, iters + 1i64, cap));
-    } else {
-        IdxHandle<TCB>: invalid;
-        invalid.index = -1i64;
-        invalid.generation = 0i64;
-        pass(invalid);
+        iters = iters + 1i64;
     }
+    pass(99i32);
 };
 
-pub func:pid_map_lookup = IdxHandle<TCB>(PidMap->:map, int64:pid) {
+pub func:pid_map_lookup = Handle<TCB>(PidMap->:map, int64:pid) {
     int64: cap = map->capacity;
-    int64: h = raw hash_pid(pid, cap);
-    pass(raw pid_map_lookup_rec(map, pid, h, 0i64, cap));
-};
-
-func:pid_map_remove_rec = bool(PidMap->:map, int64:pid, int64:h, int64:iters, int64:cap) {
-    if (iters >= cap) {
-        pass(false);
-    }
+    int64: h = _! hash_pid(pid, cap);
+    int64: iters = 0i64;
     
-    if (map->slots[h].occupied) {
-        if (map->slots[h].pid == pid) {
-            map->slots[h].occupied = false;
-            map->count = map->count - 1i64;
-            pass(true);
+    Handle<TCB>: invalid;
+    invalid.index = 0u64;
+    invalid.generation = 0u32;
+    
+    int64: base = map->slots => int64;
+    
+    while (iters < cap) {
+        wild PidMapSlot->: slot = (base + (h * 32i64)) => wild PidMapSlot->;
+        if (slot->occupied) {
+            if (slot->pid == pid) {
+                pass(slot->handle);
+            }
+            h = h + 1i64;
+            if (h >= cap) { h = 0i64; }
+        } else {
+            pass(invalid);
         }
-        int64: next_h = h + 1i64;
-        if (next_h >= cap) { next_h = 0i64; }
-        pass(raw pid_map_remove_rec(map, pid, next_h, iters + 1i64, cap));
-    } else {
-        pass(false);
+        iters = iters + 1i64;
     }
+    pass(invalid);
 };
 
 pub func:pid_map_remove = bool(PidMap->:map, int64:pid) {
     int64: cap = map->capacity;
-    int64: h = raw hash_pid(pid, cap);
-    pass(raw pid_map_remove_rec(map, pid, h, 0i64, cap));
+    int64: h = _! hash_pid(pid, cap);
+    int64: iters = 0i64;
+    int64: base = map->slots => int64;
+    
+    while (iters < cap) {
+        wild PidMapSlot->: slot = (base + (h * 32i64)) => wild PidMapSlot->;
+        if (slot->occupied) {
+            if (slot->pid == pid) {
+                slot->occupied = false;
+                map->count = map->count - 1i64;
+                pass(true);
+            }
+            h = h + 1i64;
+            if (h >= cap) { h = 0i64; }
+        } else {
+            pass(false);
+        }
+        iters = iters + 1i64;
+    }
+    pass(false);
 };

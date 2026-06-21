@@ -1,0 +1,60 @@
+// src/core/scheduler.npk
+use "../smp/chase_lev.npk".*;
+use "../fairness/rbtree.npk".*;
+use "../smp/rebalance.npk".*;
+use "../structs/tcb.npk".*;
+use "../isolation/context.npk".*;
+use "../isolation/replenish.npk".*;
+use "../context/coroutine.npk".*;
+
+pub func:scheduler_tick = NIL(
+    int64: deque_int,
+    wild RBTree->: tree,
+    int64: victim_deque_int,
+    arena<TCB>@: tcb_arena,
+    wild ReplenishQueue->: rq
+) {
+    Handle<TCB>: handle;
+    handle.index = 0u64;
+    handle.generation = 0u32;
+    
+    // 1. Try local deque
+    uint64: task_val = _! chase_lev_pop(deque_int);
+    
+    if (task_val != 0xffffffffffffffffu64) {
+        handle.index = task_val;
+    } else {
+        // 2. Try CFS RBTree
+        Handle<TCB>: tree_handle = _! rbt_extract_min(tree);
+        if (tree_handle.index != 0u64) {
+            handle = tree_handle;
+        } else {
+            // 3. Try Stealing
+            uint64: stolen = _! rebalance_steal_half(victim_deque_int, deque_int);
+            if (stolen > 0u64) {
+                handle.index = _! chase_lev_pop(deque_int);
+            } else {
+                pass(NIL);
+            }
+        }
+    }
+    
+    // Execute if found
+    if (handle.index != 0u64) {
+        TCB: tcb_val = tcb_arena->get(handle) ?!;
+        wild SchedulingContext->: sc = tcb_val.kernel_stack => wild SchedulingContext->;
+        
+        bool: is_exhausted = false;
+        if (sc != NULL) {
+            is_exhausted = _! sc_exhausted(sc);
+        }
+        
+        if (is_exhausted) {
+            _? rq_enqueue(rq, sc->period => int64, sc->budget => int64);
+        } else {
+            _? await_resume(handle.index => int64);
+        }
+    }
+    
+    pass(NIL);
+};

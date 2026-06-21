@@ -1,6 +1,5 @@
 // src/isolation/replenish.npk
 // Replenishment Queue for Sporadic Server
-use "../structs/memory_helpers.npk".*;
 
 Rules:ValidTime = {
     $ >= 0i64
@@ -11,9 +10,20 @@ Rules:ValidAmount = {
     $ <= 1000000000i64 // Prevent catastrophic overflow
 };
 
+pub struct:DequeueResult = {
+    int64: amount;
+    int64: time;
+};
+
 pub struct:Replenishment = {
-    fix256: rTime;
-    fix256: rAmount;
+    int64: rTime;
+    int64: padding1;
+    int64: padding2;
+    int64: padding3;
+    int64: rAmount;
+    int64: padding4;
+    int64: padding5;
+    int64: padding6;
 };
 
 // Size = 32i64 bytes
@@ -25,19 +35,18 @@ pub struct:ReplenishQueue = {
     // Followed dynamically by Replenishment array
 };
 
-pub func:rq_init = ReplenishQueue->(int64: capacity) {
+pub func:rq_init = wild ReplenishQueue->(int64: capacity) {
     int64: q_bytes = 32i64 + (capacity * 64i64);
-    wild ReplenishQueue->: rq = calloc(1i64, q_bytes) => ReplenishQueue->;
+    wild ReplenishQueue->: rq = calloc(1i64, q_bytes) => wild ReplenishQueue->;
     
-    int64: base = raw ptr_to_int(rq => any->);
-    drop write_int64(base + 0i64, 0i64); // head
-    drop write_int64(base + 8i64, 0i64); // tail
-    drop write_int64(base + 16i64, 0i64); // count
-    drop write_int64(base + 24i64, capacity); // capacity
+    rq->head = 0i64;
+    rq->tail = 0i64;
+    rq->count = 0i64;
+    rq->capacity = capacity;
     pass(rq);
 };
 
-pub func:rq_enqueue = int32(ReplenishQueue->:rq, int64: rTime, int64: rAmount) {
+pub func:rq_enqueue = int32(wild ReplenishQueue->:rq, int64: rTime, int64: rAmount) {
     limit<ValidTime> int64: time_val = rTime;
     limit<ValidAmount> int64: amt_val = rAmount;
 
@@ -46,80 +55,90 @@ pub func:rq_enqueue = int32(ReplenishQueue->:rq, int64: rTime, int64: rAmount) {
         amt_val = 100i64;
     }
 
-    int64: base = raw ptr_to_int(rq => any->);
-    int64: count = raw read_int64(base + 16i64);
-    int64: capacity = raw read_int64(base + 24i64);
+    int64: count = rq->count;
+    int64: capacity = rq->capacity;
+    int64: tail = rq->tail;
+    int64: base = rq => int64;
 
     if (count >= capacity) {
-        pass(88i32); // Queue full
+        // Graceful Tail-Coalescing
+        int64: prev_tail = tail - 1i64;
+        if (prev_tail < 0i64) {
+            prev_tail = capacity - 1i64;
+        }
+        wild Replenishment->: prev_slot = (base + 32i64 + (prev_tail * 64i64)) => wild Replenishment->;
+        prev_slot->rTime = time_val;
+        prev_slot->rAmount = prev_slot->rAmount + amt_val;
+        pass(0i32);
     }
-
-    int64: tail = raw read_int64(base + 8i64);
     
     // Slot offset: 32i64 + (tail * 64i64)
-    int64: slot_ptr = base + 32i64 + (tail * 64i64);
+    wild Replenishment->: slot = (base + 32i64 + (tail * 64i64)) => wild Replenishment->;
     
-    // Write rTime (offset 0i64 in Replenishment)
-    drop write_int64(slot_ptr + 0i64, time_val);
-    drop write_int64(slot_ptr + 8i64, 0i64);
-    drop write_int64(slot_ptr + 16i64, 0i64);
-    drop write_int64(slot_ptr + 24i64, 0i64);
-
-    // Write rAmount (offset 32i64 in Replenishment)
-    drop write_int64(slot_ptr + 32i64, amt_val);
-    drop write_int64(slot_ptr + 40i64, 0i64);
-    drop write_int64(slot_ptr + 48i64, 0i64);
-    drop write_int64(slot_ptr + 56i64, 0i64);
+    // Write rTime and rAmount directly
+    slot->rTime = time_val;
+    slot->padding1 = 0i64;
+    slot->padding2 = 0i64;
+    slot->padding3 = 0i64;
+    slot->rAmount = amt_val;
+    slot->padding4 = 0i64;
+    slot->padding5 = 0i64;
+    slot->padding6 = 0i64;
 
     // Update tail and count
     int64: next_tail = tail + 1i64;
     if (next_tail >= capacity) { next_tail = 0i64; }
     
-    drop write_int64(base + 8i64, next_tail);
-    drop write_int64(base + 16i64, count + 1i64);
+    rq->tail = next_tail;
+    rq->count = count + 1i64;
 
     pass(0i32);
 };
 
-// Returns rAmount. If empty, returns -1i64. rTime_out is updated.
-pub func:rq_dequeue = int64(ReplenishQueue->:rq, int64->: rTime_out) {
-    int64: base = raw ptr_to_int(rq => any->);
-    int64: count = raw read_int64(base + 16i64);
+// Returns DequeueResult. If empty, amount and time are -1i64.
+pub func:rq_dequeue = DequeueResult(wild ReplenishQueue->:rq) {
+    int64: count = rq->count;
     
     if (count <= 0i64) {
-        pass(-1i64);
+        DequeueResult: invalid_res;
+        invalid_res.amount = -1i64;
+        invalid_res.time = -1i64;
+        pass(invalid_res);
     }
 
-    int64: head = raw read_int64(base + 0i64);
-    int64: capacity = raw read_int64(base + 24i64);
+    int64: head = rq->head;
+    int64: capacity = rq->capacity;
     
     // Slot offset: 32i64 + (head * 64i64)
-    int64: slot_ptr = base + 32i64 + (head * 64i64);
+    int64: base = rq => int64;
+    wild Replenishment->: slot = (base + 32i64 + (head * 64i64)) => wild Replenishment->;
     
-    int64: time_val = raw read_int64(slot_ptr + 0i64);
-    int64: amt_val = raw read_int64(slot_ptr + 32i64);
+    int64: time_val = slot->rTime;
+    int64: amt_val = slot->rAmount;
     
-    drop write_int64(raw ptr_to_int(rTime_out => any->), time_val);
-
     int64: next_head = head + 1i64;
     if (next_head >= capacity) { next_head = 0i64; }
 
-    drop write_int64(base + 0i64, next_head);
-    drop write_int64(base + 16i64, count - 1i64);
+    rq->head = next_head;
+    rq->count = count - 1i64;
 
-    pass(amt_val);
+    DequeueResult: res;
+    res.amount = amt_val;
+    res.time = time_val;
+    pass(res);
 };
 
-pub func:rq_peek_time = int64(ReplenishQueue->:rq) {
-    int64: base = raw ptr_to_int(rq => any->);
-    int64: count = raw read_int64(base + 16i64);
+pub func:rq_peek_time = int64(wild ReplenishQueue->:rq) {
+    int64: count = rq->count;
     
     if (count <= 0i64) {
         pass(-1i64);
     }
 
-    int64: head = raw read_int64(base + 0i64);
-    int64: slot_ptr = base + 32i64 + (head * 64i64);
+    int64: head = rq->head;
     
-    pass(raw read_int64(slot_ptr + 0i64));
+    int64: base = rq => int64;
+    wild Replenishment->: slot = (base + 32i64 + (head * 64i64)) => wild Replenishment->;
+    
+    pass(slot->rTime);
 };

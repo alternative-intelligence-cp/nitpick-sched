@@ -3,3 +3,8 @@
 struct:Dummy = {
     int32: id;
 };
+
+pub func:failsafe = int32(tbb32:err_code) {
+    _? stderr.write(`CRITICAL PANIC: &{err_code}\n`);
+    exit(err_code => int32);
+};

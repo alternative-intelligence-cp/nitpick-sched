@@ -1,9 +1,0 @@
-struct:S = { int32:v; int64:v2; };
-func:init = int32(S->:s) { s->v = 1; pass 0; };
-func:main = int32() {
-    S: s;
-    s.v = 0;
-    drop init(@s);
-    exit 0;
-};
-func:failsafe = int32(tbb32:err) { exit 1; };

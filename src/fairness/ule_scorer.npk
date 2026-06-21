@@ -1,7 +1,6 @@
 // src/fairness/ule_scorer.npk
 // ULE Interactivity Scorer
 
-use "../structs/memory_helpers.npk".*;
 
 Rules:ScoreBounds = {
     $ >= 0i64,
@@ -10,14 +9,14 @@ Rules:ScoreBounds = {
 
 pub func:calculate_interactivity = int32(int64: sleep_time, int64: run_time) {
     if (sleep_time == 0i64 && run_time == 0i64) {
-        limit<ScoreBounds> int32: default_score = 0i64;
+        limit<ScoreBounds> int32: default_score = 0i32;
         pass(default_score);
     }
     
     // Total time observed
     int64: total = sleep_time + run_time;
     if (total == 0i64) {
-        limit<ScoreBounds> int32: safe_score = 0i64;
+        limit<ScoreBounds> int32: safe_score = 0i32;
         pass(safe_score);
     }
     
@@ -28,7 +27,7 @@ pub func:calculate_interactivity = int32(int64: sleep_time, int64: run_time) {
     if (score64 < 0i64) { score64 = 0i64; }
     if (score64 > 100i64) { score64 = 100i64; }
     
-    limit<ScoreBounds> int32: score = raw int64_to_int32(score64);
+    limit<ScoreBounds> int32: score = score64 => int32;
     
     pass(score);
 };

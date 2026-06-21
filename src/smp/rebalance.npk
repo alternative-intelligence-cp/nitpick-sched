@@ -1,74 +1,71 @@
+// src/smp/rebalance.npk
 use "chase_lev.npk".*;
-use "../structs/memory_helpers.npk".*;
 
 // Steal up to half of the tasks from src_deque and push them to dst_deque.
 // Returns the number of tasks successfully stolen and pushed.
-pub func:rebalance_steal_half = int32(int64: src_deque, int64: dst_deque) {
+pub func:rebalance_steal_half = uint64(int64: src_deque_int, int64: dst_deque_int) {
     bool: running = true;
-    int32: stolen_count = 0i32;
+    uint64: stolen_count = 0u64;
     
-    // Scratchpad to hold the stolen tasks
-    astack(64i64);
+    // Hardware stack buffer for FIFO order restoration
+    stack uint64[64]: temp_buf;
+    
+    wild ChaseLev->: src_q = src_deque_int => wild ChaseLev->;
     
     while (running) {
-        int64: t = raw read_int64(src_deque + 0i64);
-        drop npk_shim_atomic_thread_fence(5i32); // memory_order_seq_cst
-        int64: b = raw read_int64(src_deque + 8i64);
+        uint64: t = src_q->top.load();
+        uint64: b = src_q->bottom.load();
         
-        int64: size = b - t;
-        if (size <= 1i64) {
-            // Nothing to steal, or only 1i64 item
+        uint64: size = b - t;
+        if (size <= 1u64) {
+            // Nothing to steal, or only 1 item
             running = false;
         } else {
-            int64: n64 = size / 2i64;
-            if (n64 > 64i64) {
-                n64 = 64i64; // Max half of 128i64 is 64i64
+            uint64: n64 = size / 2u64;
+            if (n64 > 64u64) {
+                n64 = 64u64; // Max half of 128 is 64
             }
             
-            // 1i64. Read the N items and push to astack
-            int64: i = 0i64;
+            // 1. Read the N items and store in temp_buf (oldest at index 0)
+            uint64: i = 0u64;
             while (i < n64) {
-                int64: current_t = t + i;
-                int64: idx = current_t % 128i64;
-                int64: item_ptr = src_deque + 16i64 + (idx * 4i64);
-                int32: task = raw read_int32(item_ptr);
-                apush(task);
-                i = i + 1i64;
+                uint64: current_t = t + i;
+                uint64: idx = current_t % 128u64;
+                uint64: task = src_q->items[idx => int64];
+                
+                temp_buf[i => int64] = task;
+                i = i + 1u64;
             }
             
-            // 2i64. Try to commit the steal by advancing top by N
-            bool: success = raw cmpxchg_int64(src_deque + 0i64, t, t + n64);
+            // 2. Try to commit the steal by advancing top by N
+            bool: success = src_q->top.compare_exchange_weak_acqrel(t, t + n64);
             if (success) {
                 // Successfully stole N items
-                stolen_count = raw int64_to_int32(n64);
+                stolen_count = n64;
                 running = false;
             } else {
-                // Failed to steal, CAS failed. We must pop the items we just pushed
-                // to reset the astack for the next attempt.
-                int64: k = 0i64;
-                while (k < n64) {
-                    int32: discard = apop();
-                    k = k + 1i64;
-                }
+                // Failed to steal, CAS failed. We just retry the loop.
             }
         }
     }
     
-    // Now push them into the dst_deque
-    if (stolen_count > 0i32) {
-        int32: j = 0i32;
-        while (j < stolen_count) {
-            int32: task = apop();
+    // Now push them into the dst_deque in FIFO order!
+    if (stolen_count > 0u64) {
+        // Iterate backward to restore order (push newest first, oldest last)
+        // so that the worker (which pops from bottom) gets oldest first.
+        int64: k = (stolen_count => int64) - 1i64;
+        while (k >= 0i64) {
+            uint64: task = temp_buf[k];
             
             // We assume dst_deque is owned by us, so we can just push
             bool: pushed = false;
             while (!pushed) {
-                pushed = raw chase_lev_push(dst_deque, task);
+                pushed = chase_lev_push(dst_deque_int, task) ? false;
                 if (!pushed) {
-                    // spin
+                    // spin or yield
                 }
             }
-            j = j + 1i64;
+            k = k - 1i64;
         }
     }
     

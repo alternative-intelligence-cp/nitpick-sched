@@ -1,43 +1,41 @@
-use "arena.npk".{TCBArena, arena_init, tcb_arena_allocate, tcb_arena_get};
+// src/structs/queue.npk
 use "tcb.npk".TCB;
-use "handle.npk".IdxHandle;
 
 pub struct:TCBQueue = {
-    IdxHandle<TCB>: head;
-    IdxHandle<TCB>: tail;
+    Handle<TCB>: head;
+    Handle<TCB>: tail;
     int64: count;
 };
 
 pub func:queue_init = NIL(TCBQueue->:q) {
-    IdxHandle<TCB>: invalid;
-    invalid.index = -1i64;
-    invalid.generation = 0i64;
-
+    Handle<TCB>: invalid;
+    invalid.index = 0u64;
+    invalid.generation = 0u32;
     q->head = invalid;
     q->tail = invalid;
     q->count = 0i64;
     pass(NIL);
 };
 
-pub func:queue_enqueue2 = IdxHandle<TCB>(TCBQueue->:q, TCBArena->:arena, IdxHandle<TCB>:handle) {
-    IdxHandle<TCB>: invalid;
-    invalid.index = -1i64;
-    invalid.generation = 0i64;
-
+pub func:queue_enqueue2 = Handle<TCB>(TCBQueue->:q, arena<TCB>@: tcb_arena, Handle<TCB>:handle) {
+    Handle<TCB>: invalid;
+    invalid.index = 0u64;
+    invalid.generation = 0u32;
+    
     if (q->count < 0i64) { pass(invalid); }
+    if (handle.index == 0u64) { pass(invalid); }
     
-    TCB->: tcb_ptr = raw tcb_arena_get(arena, handle);
-    if (tcb_ptr == NULL) { pass(invalid); }
+    TCB: tcb_val = tcb_arena->get(handle) ?!;
     
-    IdxHandle<TCB>: tail_cpy = q->tail;
-    tcb_ptr->prev = tail_cpy;
-    tcb_ptr->next = invalid;
+    Handle<TCB>: tail_cpy = q->tail;
+    tcb_val.prev = tail_cpy;
+    tcb_val.next = invalid;
+    _? tcb_arena->set(handle, tcb_val);
 
-    if (tail_cpy.index != -1i64) {
-        TCB->: tail_tcb = raw tcb_arena_get(arena, tail_cpy);
-        if (tail_tcb != NULL) {
-            tail_tcb->next = handle;
-        }
+    if (tail_cpy.index != 0u64) {
+        TCB: tail_val = tcb_arena->get(tail_cpy) ?!;
+        tail_val.next = handle;
+        _? tcb_arena->set(tail_cpy, tail_val);
     } else {
         q->head = handle;
     }
@@ -48,70 +46,70 @@ pub func:queue_enqueue2 = IdxHandle<TCB>(TCBQueue->:q, TCBArena->:arena, IdxHand
     pass(handle);
 };
 
-pub func:queue_dequeue = IdxHandle<TCB>(TCBQueue->:q, TCBArena->:arena) {
-    IdxHandle<TCB>: invalid;
-    invalid.index = -1i64;
-    invalid.generation = 0i64;
-
-    IdxHandle<TCB>: head_cpy = q->head;
-    if (head_cpy.index == -1i64) {
+pub func:queue_dequeue = Handle<TCB>(TCBQueue->:q, arena<TCB>@: tcb_arena) {
+    Handle<TCB>: invalid;
+    invalid.index = 0u64;
+    invalid.generation = 0u32;
+    
+    Handle<TCB>: head_cpy = q->head;
+    
+    if (head_cpy.index == 0u64) {
         pass(invalid);
     }
 
-    TCB->: head_tcb = raw tcb_arena_get(arena, head_cpy);
-    if (head_tcb == NULL) { pass(invalid); }
-
-    IdxHandle<TCB>: tcb_next_cpy = head_tcb->next;
+    TCB: head_val = tcb_arena->get(head_cpy) ?!;
+    Handle<TCB>: tcb_next_cpy = head_val.next;
+    
     q->head = tcb_next_cpy;
 
-    if (tcb_next_cpy.index != -1i64) {
-        TCB->: next_tcb = raw tcb_arena_get(arena, tcb_next_cpy);
-        if (next_tcb != NULL) {
-            next_tcb->prev = invalid;
-        }
+    if (tcb_next_cpy.index != 0u64) {
+        TCB: next_val = tcb_arena->get(tcb_next_cpy) ?!;
+        next_val.prev = invalid;
+        _? tcb_arena->set(tcb_next_cpy, next_val);
     } else {
         q->tail = invalid;
     }
 
-    head_tcb->prev = invalid;
-    head_tcb->next = invalid;
+    head_val.prev = invalid;
+    head_val.next = invalid;
+    _? tcb_arena->set(head_cpy, head_val);
 
     q->count = q->count - 1i64;
 
     pass(head_cpy);
 };
 
-pub func:queue_remove = IdxHandle<TCB>(TCBQueue->:q, TCBArena->:arena, IdxHandle<TCB>:handle) {
-    IdxHandle<TCB>: invalid;
-    invalid.index = -1i64;
-    invalid.generation = 0i64;
+pub func:queue_remove = Handle<TCB>(TCBQueue->:q, arena<TCB>@: tcb_arena, Handle<TCB>:handle) {
+    Handle<TCB>: invalid;
+    invalid.index = 0u64;
+    invalid.generation = 0u32;
+    
+    if (handle.index == 0u64) { pass(invalid); }
+    
+    TCB: tcb_val = tcb_arena->get(handle) ?!;
+    
+    Handle<TCB>: prev_cpy = tcb_val.prev;
+    Handle<TCB>: next_cpy = tcb_val.next;
 
-    TCB->: tcb_ptr = raw tcb_arena_get(arena, handle);
-    if (tcb_ptr == NULL) { pass(invalid); }
-
-    IdxHandle<TCB>: prev_cpy = tcb_ptr->prev;
-    IdxHandle<TCB>: next_cpy = tcb_ptr->next;
-
-    if (prev_cpy.index != -1i64) {
-        TCB->: prev_tcb = raw tcb_arena_get(arena, prev_cpy);
-        if (prev_tcb != NULL) {
-            prev_tcb->next = next_cpy;
-        }
+    if (prev_cpy.index != 0u64) {
+        TCB: prev_val = tcb_arena->get(prev_cpy) ?!;
+        prev_val.next = next_cpy;
+        _? tcb_arena->set(prev_cpy, prev_val);
     } else {
         q->head = next_cpy;
     }
 
-    if (next_cpy.index != -1i64) {
-        TCB->: next_tcb = raw tcb_arena_get(arena, next_cpy);
-        if (next_tcb != NULL) {
-            next_tcb->prev = prev_cpy;
-        }
+    if (next_cpy.index != 0u64) {
+        TCB: next_val = tcb_arena->get(next_cpy) ?!;
+        next_val.prev = prev_cpy;
+        _? tcb_arena->set(next_cpy, next_val);
     } else {
         q->tail = prev_cpy;
     }
 
-    tcb_ptr->next = invalid;
-    tcb_ptr->prev = invalid;
+    tcb_val.next = invalid;
+    tcb_val.prev = invalid;
+    _? tcb_arena->set(handle, tcb_val);
 
     q->count = q->count - 1i64;
     pass(handle);
