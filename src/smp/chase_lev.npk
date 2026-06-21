@@ -1,5 +1,5 @@
 // src/smp/chase_lev.npk
-// Lock-free circular deque (fast path)
+// Lock-free circular deque
 
 use "../structs/memory_helpers.npk".*;
 
@@ -54,12 +54,48 @@ pub func:chase_lev_pop = int32(int64: deque) {
         }
         
         // Single element left, structurally requires CAS in concurrent case
-        // Single-threaded fast path simulation:
-        drop write_int64(deque + 0, top + 1);
+        bool: success = raw cmpxchg_int64(deque + 0, top, top + 1);
         drop write_int64(deque + 8, top + 1);
-        pass task;
+        
+        if (success) {
+            pass task;
+        }
+        pass -1;
     } else {
         drop write_int64(deque + 8, top);
         pass -1;
     }
+};
+
+// Returns -1 if empty, or task handle. Safe for concurrent thieves.
+pub func:chase_lev_steal = int32(int64: deque) {
+    if (deque == 0) { pass -1; }
+    
+    bool: running = true;
+    int32: stolen_task = -1;
+    
+    while (running) {
+        int64: t = raw read_int64(deque + 0);
+        int64: b = raw read_int64(deque + 8);
+        
+        int64: size = b - t;
+        if (size <= 0) {
+            // Empty
+            running = false;
+        } else {
+            // Read task from queue
+            int64: idx = t % 128;
+            int64: item_ptr = deque + 16 + (idx * 4);
+            int32: task = raw read_int32(item_ptr);
+            
+            // Now attempt CAS to increment top
+            bool: success = raw cmpxchg_int64(deque + 0, t, t + 1);
+            if (success) {
+                stolen_task = task;
+                running = false;
+            }
+        }
+    }
+    
+    pass stolen_task;
 };

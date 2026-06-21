@@ -1,5 +1,5 @@
 // tests/unit/test_chase_lev.npk
-// Verifies Chase-Lev fast path (push/pop) single-threaded
+// Verifies Chase-Lev fast path (push/pop) and slow path (steal) single-threaded
 
 use "../../src/smp/chase_lev.npk".*;
 use "../../src/structs/memory_helpers.npk".*;
@@ -17,41 +17,58 @@ pub func:main = int32() {
     int32: e = raw chase_lev_pop(deque);
     if (e != -1) { exit 2; }
     
+    // Steal empty
+    int32: e_steal = raw chase_lev_steal(deque);
+    if (e_steal != -1) { exit 3; }
+    
     // Push one
-    bool: p1 = raw chase_lev_push(deque, 42);
-    if (!p1) { exit 3; }
+    bool: success_1 = raw chase_lev_push(deque, 42);
+    if (!success_1) { exit 4; }
     
-    // Pop one
-    int32: r1 = raw chase_lev_pop(deque);
-    if (r1 != 42) { exit 4; }
+    // Steal one
+    int32: r1 = raw chase_lev_steal(deque);
+    if (r1 != 42) { exit 5; }
     
-    // Pop empty again
-    int32: e2 = raw chase_lev_pop(deque);
-    if (e2 != -1) { exit 5; }
+    // Steal empty again
+    int32: e2 = raw chase_lev_steal(deque);
+    if (e2 != -1) { exit 6; }
     
     // Push multiple
     int32: i = 0;
     while (i < 128) {
-        bool: success = raw chase_lev_push(deque, i + 100);
-        if (!success) { exit 6; }
+        bool: success_multi = raw chase_lev_push(deque, i + 100);
+        if (!success_multi) { exit 7; }
         i = i + 1;
     }
     
     // Push full
     bool: full = raw chase_lev_push(deque, 999);
-    if (full) { exit 7; }
+    if (full) { exit 8; }
     
-    // Pop one
-    int32: r2 = raw chase_lev_pop(deque);
-    if (r2 != 227) { exit 8; } // The last item pushed was 127 + 100 = 227
+    // Steal one from bottom (wait, steal takes from top!)
+    // Top was 1, because we pushed 42 and stole it. 
+    // Wait, the first push (42) put it at index 0. Then steal took it, moving top to 1.
+    // Then we pushed 128 items (indexes 1 to 128). 
+    // The items are 100, 101, ..., 227.
+    // Steal should take from top (index 1), which has item 100.
+    int32: r2 = raw chase_lev_steal(deque);
+    if (r2 != 100) { exit 9; }
+    
+    // Pop one from bottom (index 128)
+    int32: r3 = raw chase_lev_pop(deque);
+    if (r3 != 227) { exit 10; }
     
     // Pop rest
     int32: j = 126;
-    while (j >= 0) {
+    while (j >= 1) {
         int32: p = raw chase_lev_pop(deque);
-        if (p != j + 100) { exit 9; }
+        if (p != j + 100) { exit 11; }
         j = j - 1;
     }
+    
+    // Steal should be empty now
+    int32: e3 = raw chase_lev_steal(deque);
+    if (e3 != -1) { exit 12; }
     
     exit 0;
 };

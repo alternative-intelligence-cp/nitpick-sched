@@ -30,3 +30,9 @@ pub func:int32_to_int64 = int64(int32: val) {
 pub func:int64_to_int32 = int32(int64: val) {
     pass asm!!!<int32>("x86_64", "movq $1, %rax; movl %eax, $0", "=r,r", val);
 };
+
+pub func:cmpxchg_int64 = bool(int64: ptr, int64: expected, int64: desired) {
+    int32: success = asm!!!<int32>("x86_64", "lock cmpxchgq $3, ($1); setz %al; movzbl %al, $0", "=r,r,{rax},r", ptr, expected, desired);
+    if (success == 0) { pass false; }
+    pass true;
+};
