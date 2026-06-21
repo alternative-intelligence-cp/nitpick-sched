@@ -8,6 +8,8 @@ pub struct:ChaseLev = {
     int64: bottom;
 };
 
+func:npk_shim_atomic_thread_fence = NIL(int32:order);
+
 // 128 elements max. Each element is an int32 TCB Handle.
 // size = 16 bytes for top/bottom + 128 * 4 bytes = 528 bytes.
 pub func:chase_lev_init = int64() {
@@ -41,6 +43,8 @@ pub func:chase_lev_pop = int32(int64: deque) {
     
     int64: bottom = raw read_int64(deque + 8) - 1;
     drop write_int64(deque + 8, bottom);
+    
+    drop npk_shim_atomic_thread_fence(5); // memory_order_seq_cst
     
     int64: top = raw read_int64(deque + 0);
     
