@@ -36,3 +36,11 @@ pub func:cmpxchg_int64 = bool(int64: ptr, int64: expected, int64: desired) {
     if (success == 0) { pass false; }
     pass true;
 };
+
+pub func:atomic_fetch_add_int32 = int32(int64: ptr, int32: val) {
+    pass asm!!!<int32>("x86_64", "lock xaddl $0, ($1)", "=r,r,0", ptr, val);
+};
+pub func:atomic_fetch_add_int64 = int64(int64: ptr, int64: val) {
+    // $0 = output, $1 = ptr, $2 = val (tied to $0)
+    pass asm!!!<int64>("x86_64", "lock xaddq $0, ($1)", "=r,r,0", ptr, val);
+};
