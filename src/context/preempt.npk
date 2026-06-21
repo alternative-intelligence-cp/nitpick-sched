@@ -13,9 +13,6 @@ pub func:sys_clock_nanosleep = int32(int64: nsec) {
     
     int64: ptr = raw ptr_to_int(req => any->);
     
-    // clock_id = 1 (CLOCK_MONOTONIC), flags = 0
-    // syscall 230 is sys_clock_nanosleep
-    // %rdi = clock_id, %rsi = flags, %rdx = req, %r10 = rem
     int64: res = asm!!!<int64>("x86_64",
         "movq $$1, %rdi; movq $$0, %rsi; movq $1, %rdx; movq $$0, %r10; movq $$230, %rax; syscall; movq %rax, $0",
         "=r,r,~{rcx},~{r11},~{rax},~{rdi},~{rsi},~{rdx},~{r10}",
@@ -26,16 +23,28 @@ pub func:sys_clock_nanosleep = int32(int64: nsec) {
     pass 0;
 };
 
-// Monitor thread loop waiting for budget expiry
-pub func:monitor_budget_expiry = NIL(TCB->: task) {
-    // Sleep 1 millisecond (1000000 ns)
+pub func:preempt_sys_clone = int64(int64: flags, int64: child_stack) {
+    int64: res = asm!!!<int64>("x86_64",
+        "movq $1, %rdi; movq $2, %rsi; movq $$0, %rdx; movq $$0, %r10; movq $$0, %r8; movq $$56, %rax; syscall; movq %rax, $0",
+        "=r,r,r,~{rcx},~{r11},~{rax},~{rdi},~{rsi},~{rdx},~{r10},~{r8}",
+        flags, child_stack
+    );
+    pass res;
+};
+
+pub func:spawn_replacement_worker = int64() {
+    int64: stack_size = 1048576; // 1 MB
+    int8->: stack_mem = calloc(1, stack_size);
+    int64: stack_top = raw ptr_to_int(stack_mem => any->) + stack_size;
+    
+    int64: clone_flags = 331520; // 0x50f00
+    int64: res = raw preempt_sys_clone(clone_flags, stack_top);
+    pass res;
+};
+
+pub func:monitor_budget_expiry = int64(TCB->: task) {
     int64: sleep_ns = 1000000;
-    
     drop sys_clock_nanosleep(sleep_ns);
-    
-    // Time expired! Quarantine the task.
-    // Hack around atomic_int32 assignment
-    // drop write_int32(task->ctx.state => any->, 2);
-    
-    pass NIL;
+    int64: tid = raw spawn_replacement_worker();
+    pass tid;
 };

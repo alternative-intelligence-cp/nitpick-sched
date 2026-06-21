@@ -1,0 +1,33 @@
+use "../../src/context/preempt.npk".*;
+use "../../src/structs/tcb.npk".*;
+use "../../src/structs/context.npk".*;
+use "../../src/structs/memory_helpers.npk".*;
+
+pub func:proc_exit = int32(int32: code) {
+    int32: dummy = asm!!!<int32>("x86_64", "movl $1, %edi; movl $$60, %eax; syscall", "=r,r", code);
+    pass 0;
+};
+
+pub func:main = int32() {
+    TCB->: t = calloc(1, 1024) => TCB->;
+    
+    int64: tid = raw monitor_budget_expiry(t);
+    
+    if (tid == 0) {
+        // Child thread (replacement worker)
+        drop proc_exit(0);
+    }
+    
+    // Parent monitor thread
+    if (tid < 0) {
+        // clone failed
+        drop proc_exit(1);
+    }
+    
+    // Wait slightly to let child exit
+    drop sys_clock_nanosleep(5000000); // 5ms
+    
+    exit 0;
+};
+
+func:failsafe = int32(tbb32:err) { exit 99; };
