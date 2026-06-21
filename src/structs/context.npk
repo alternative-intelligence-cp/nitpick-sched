@@ -7,3 +7,9 @@ pub struct:TaskContext = {
     int32: nice_value;
     atomic<int32>: state;
 };
+
+// Minimal struct representing the LLVM coroutine frame pointer state
+pub struct:CoroutineContext = {
+    int64: frame_ptr;
+    bool: is_done;
+};

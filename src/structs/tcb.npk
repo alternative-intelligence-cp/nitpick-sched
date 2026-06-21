@@ -1,10 +1,12 @@
 // tcb.npk — Task Control Block definition
-use "context.npk".TaskContext;
-use "handle.npk".IdxHandle;
+use "context.npk".*;
+use "handle.npk".*;
 
 pub struct:TCB = {
     int64: pid;
     TaskContext: ctx;
+    int64: coro_frame_ptr;
+    bool: coro_is_done;
     IdxHandle<TCB>: next;
     IdxHandle<TCB>: prev;
     any->: kernel_stack;

@@ -1,0 +1,25 @@
+use "../structs/tcb.npk".*;
+use "../fairness/cfs_math.npk".*;
+use "../structs/context.npk".*;
+
+// Hook called when a user-space coroutine executes `yield()`
+pub func:await_suspend = NIL(TCB->: task, int64: frame_ptr) {
+    task->coro_frame_ptr = frame_ptr;
+    
+    fix256: delta_exec = 1000000.0;
+    fix256: weight = 1024.0;
+    
+    fix256: vdelta = raw calc_vruntime_delta(delta_exec, weight);
+    fix256: current_vrt = task->ctx.vruntime;
+    task->ctx.vruntime = current_vrt + vdelta;
+    
+    int32: state_ready = 1;
+    task->ctx.state = task->ctx.state;
+    
+    pass NIL;
+};
+
+// Hook called by the scheduler loop to resume a task
+pub func:await_resume = bool(TCB->: task) {
+    pass true;
+};
