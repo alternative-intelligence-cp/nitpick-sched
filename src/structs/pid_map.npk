@@ -4,7 +4,7 @@ use "tcb.npk".TCB;
 pub struct:PidMapSlot = {
     int64: pid;
     Handle<TCB>: handle;
-    bool: occupied; // 0i64 = false, 1i64 = true
+    int32: state; // 0i32 = EMPTY, 1i32 = OCCUPIED, 2i32 = TOMBSTONE
 };
 
 pub struct:PidMap = {
@@ -24,7 +24,8 @@ pub func:pid_map_init = NIL(PidMap->:map) {
     int64: base = map->slots => int64;
     while (i < 1024i64) {
         wild PidMapSlot->: slot = (base + (i * 32i64)) => wild PidMapSlot->;
-        slot->occupied = false;
+        slot->state = 0i32;
+        slot->pid = 0i64;
         i = i + 1i64;
     }
     pass(NIL);
@@ -47,25 +48,37 @@ pub func:pid_map_insert = int32(PidMap->:map, int64:pid, Handle<TCB>:handle) {
     int64: iters = 0i64;
     int64: base = map->slots => int64;
     
+    int64: first_tombstone = -1i64;
+
     while (iters < cap) {
         wild PidMapSlot->: slot = (base + (h * 32i64)) => wild PidMapSlot->;
-        if (slot->occupied) {
+        if (slot->state == 1i32) {
             if (slot->pid == pid) {
                 slot->handle = handle;
                 pass(0i32);
             }
-            h = h + 1i64;
-            if (h >= cap) { h = 0i64; }
+        } else if (slot->state == 2i32) { // Tombstone
+            if (first_tombstone == -1i64) {
+                first_tombstone = h;
+            }
         } else {
-            slot->pid = pid;
-            slot->handle = handle;
-            slot->occupied = true;
-            map->count = map->count + 1i64;
-            pass(0i32);
+            break; // Empty
         }
+        h = h + 1i64;
+        if (h >= cap) { h = 0i64; }
         iters = iters + 1i64;
     }
-    pass(99i32);
+
+    if (first_tombstone != -1i64) {
+        h = first_tombstone;
+    }
+    
+    wild PidMapSlot->: slot = (base + (h * 32i64)) => wild PidMapSlot->;
+    slot->pid = pid;
+    slot->handle = handle;
+    slot->state = 1i32;
+    map->count = map->count + 1i64;
+    pass(0i32);
 };
 
 pub func:pid_map_lookup = Handle<TCB>(PidMap->:map, int64:pid) {
@@ -81,8 +94,8 @@ pub func:pid_map_lookup = Handle<TCB>(PidMap->:map, int64:pid) {
     
     while (iters < cap) {
         wild PidMapSlot->: slot = (base + (h * 32i64)) => wild PidMapSlot->;
-        if (slot->occupied) {
-            if (slot->pid == pid) {
+        if (slot->state == 1i32 || slot->state == 2i32) {
+            if (slot->state == 1i32 && slot->pid == pid) {
                 pass(slot->handle);
             }
             h = h + 1i64;
@@ -103,9 +116,10 @@ pub func:pid_map_remove = bool(PidMap->:map, int64:pid) {
     
     while (iters < cap) {
         wild PidMapSlot->: slot = (base + (h * 32i64)) => wild PidMapSlot->;
-        if (slot->occupied) {
-            if (slot->pid == pid) {
-                slot->occupied = false;
+        if (slot->state == 1i32 || slot->state == 2i32) {
+            if (slot->state == 1i32 && slot->pid == pid) {
+                slot->state = 2i32; // Set tombstone
+                slot->pid = -1i64;
                 map->count = map->count - 1i64;
                 pass(true);
             }

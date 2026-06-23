@@ -17,7 +17,7 @@ pub func:queue_init = NIL(TCBQueue->:q) {
     pass(NIL);
 };
 
-pub func:queue_enqueue2 = Handle<TCB>(TCBQueue->:q, arena<TCB>@: tcb_arena, Handle<TCB>:handle) {
+pub func:queue_enqueue2 = Handle<TCB>(TCBQueue->:q, arena<TCB>->: tcb_arena, Handle<TCB>:handle) {
     Handle<TCB>: invalid;
     invalid.index = 0u64;
     invalid.generation = 0u32;
@@ -46,7 +46,7 @@ pub func:queue_enqueue2 = Handle<TCB>(TCBQueue->:q, arena<TCB>@: tcb_arena, Hand
     pass(handle);
 };
 
-pub func:queue_dequeue = Handle<TCB>(TCBQueue->:q, arena<TCB>@: tcb_arena) {
+pub func:queue_dequeue = Handle<TCB>(TCBQueue->:q, arena<TCB>->: tcb_arena) {
     Handle<TCB>: invalid;
     invalid.index = 0u64;
     invalid.generation = 0u32;
@@ -79,7 +79,7 @@ pub func:queue_dequeue = Handle<TCB>(TCBQueue->:q, arena<TCB>@: tcb_arena) {
     pass(head_cpy);
 };
 
-pub func:queue_remove = Handle<TCB>(TCBQueue->:q, arena<TCB>@: tcb_arena, Handle<TCB>:handle) {
+pub func:queue_remove = Handle<TCB>(TCBQueue->:q, arena<TCB>->: tcb_arena, Handle<TCB>:handle) {
     Handle<TCB>: invalid;
     invalid.index = 0u64;
     invalid.generation = 0u32;

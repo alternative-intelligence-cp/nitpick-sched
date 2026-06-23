@@ -4,70 +4,55 @@ use "chase_lev.npk".*;
 // Steal up to half of the tasks from src_deque and push them to dst_deque.
 // Returns the number of tasks successfully stolen and pushed.
 pub func:rebalance_steal_half = uint64(int64: src_deque_int, int64: dst_deque_int) {
-    bool: running = true;
     uint64: stolen_count = 0u64;
-    
-    // Hardware stack buffer for FIFO order restoration
-    stack uint64[64]: temp_buf;
-    
     wild ChaseLev->: src_q = src_deque_int => wild ChaseLev->;
+      
+    // Use signed math to safely detect cross-overs  
+    int64: b = src_q->bottom.load() => int64;  
+    int64: t = src_q->top.load() => int64;  
+    int64: size_signed = b - t;  
+      
+    if (size_signed <= 1i64) {  
+        pass(0u64);  
+    }  
+      
+    uint64: size = size_signed => uint64;  
+    uint64: n64 = size / 2u64;  
     
-    while (running) {
-        uint64: t = src_q->top.load();
-        uint64: b = src_q->bottom.load();
-        
-        uint64: size = b - t;
-        if (size <= 1u64) {
-            // Nothing to steal, or only 1 item
-            running = false;
+    // Check destination available space (Fix 1.3)
+    int64: dst_sz_signed = chase_lev_size(dst_deque_int);
+    uint64: dst_sz = dst_sz_signed => uint64;    uint64: available = 0u64;
+    if (dst_sz < 128u64) {
+        available = 128u64 - dst_sz;
+    }    
+    if (n64 > available) { n64 = available; }
+    if (n64 > 64u64) { n64 = 64u64; }  
+      
+    stack uint64[64]: temp_buf; // ZERO cost, no global locks!  
+      
+    uint64: i = 0u64;  
+    while (i < n64) {  
+        uint64: task = chase_lev_steal(src_deque_int);  
+        if (task != 0xffffffffffffffffu64) {  
+            temp_buf[i => int64] = task; // standard assignment  
+            stolen_count = stolen_count + 1u64;  
+            i = i + 1u64;  
+        } else {  
+            i = n64; // Abort loop early  
+        }  
+    }  
+      
+    // Push in reverse order  
+    uint64: actual_stolen = 0u64;
+    int64: j = stolen_count => int64;  
+    while (j > 0i64) {  
+        j = j - 1i64;  
+        uint64: task = temp_buf[j];        bool: pushed = chase_lev_push(dst_deque_int, task) ? false;  
+        if (pushed) {  
+            actual_stolen = actual_stolen + 1u64;  
         } else {
-            uint64: n64 = size / 2u64;
-            if (n64 > 64u64) {
-                n64 = 64u64; // Max half of 128 is 64
-            }
-            
-            // 1. Read the N items and store in temp_buf (oldest at index 0)
-            uint64: i = 0u64;
-            while (i < n64) {
-                uint64: current_t = t + i;
-                uint64: idx = current_t % 128u64;
-                uint64: task = src_q->items[idx => int64];
-                
-                temp_buf[i => int64] = task;
-                i = i + 1u64;
-            }
-            
-            // 2. Try to commit the steal by advancing top by N
-            bool: success = src_q->top.compare_exchange_weak_acqrel(t, t + n64);
-            if (success) {
-                // Successfully stole N items
-                stolen_count = n64;
-                running = false;
-            } else {
-                // Failed to steal, CAS failed. We just retry the loop.
-            }
+            drop(failsafe(-15i32));
         }
-    }
-    
-    // Now push them into the dst_deque in FIFO order!
-    if (stolen_count > 0u64) {
-        // Iterate backward to restore order (push newest first, oldest last)
-        // so that the worker (which pops from bottom) gets oldest first.
-        int64: k = (stolen_count => int64) - 1i64;
-        while (k >= 0i64) {
-            uint64: task = temp_buf[k];
-            
-            // We assume dst_deque is owned by us, so we can just push
-            bool: pushed = false;
-            while (!pushed) {
-                pushed = chase_lev_push(dst_deque_int, task) ? false;
-                if (!pushed) {
-                    // spin or yield
-                }
-            }
-            k = k - 1i64;
-        }
-    }
-    
-    pass(stolen_count);
+    }  
+    pass(actual_stolen);  
 };

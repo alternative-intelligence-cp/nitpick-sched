@@ -11,7 +11,7 @@ pub func:scheduler_tick = NIL(
     int64: deque_int,
     wild RBTree->: tree,
     int64: victim_deque_int,
-    arena<TCB>@: tcb_arena,
+    arena<TCB>->: tcb_arena,
     wild ReplenishQueue->: rq
 ) {
     Handle<TCB>: handle;

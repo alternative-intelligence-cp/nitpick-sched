@@ -8,7 +8,7 @@ compiler = "/home/randy/Workspace/REPOS/nitpick/build/npkc"
 
 [target.nitpick_sched]
 type = "library"
-sources = ["src/core/init.npk", "src/structs/context.npk", "src/structs/tcb.npk", "src/isolation/context.npk", "src/smp/chase_lev.npk", "src/context/preempt.npk", "src/context/coroutine.npk"]
+sources = ["src/core/init.npk", "src/structs/context.npk", "src/structs/tcb.npk", "src/isolation/context.npk", "src/smp/chase_lev.npk", "src/context/coroutine.npk"]
 flags = ["-O3", "--verify", "--verify-contracts"]
 
 [target.test_tcb]
